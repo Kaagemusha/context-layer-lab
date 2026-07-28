@@ -1,0 +1,39 @@
+{
+  "name": "context-layer-lab",
+  "version": "0.1.0",
+  "description": "A small, inspectable reference implementation for trustworthy AI context.",
+  "type": "module",
+  "private": false,
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "context-layer-lab": "./dist/src/server.js"
+  },
+  "files": [
+    "dist",
+    "data",
+    "evals",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build --silent && node --test dist/test/*.test.js",
+    "eval": "npm run build --silent && node dist/src/eval-runner.js",
+    "demo:sync": "node scripts/sync-demo.mjs",
+    "demo:check": "node scripts/sync-demo.mjs --check",
+    "check": "npm run typecheck && npm test && npm run eval && npm run demo:check",
+    "start": "node dist/src/server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "zod": "4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "typescript": "5.9.3"
+  }
+}

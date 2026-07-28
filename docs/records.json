@@ -1,0 +1,88 @@
+[
+  {
+    "id": "launch-readiness",
+    "title": "Northstar Launch Readiness",
+    "summary": "Current owners, decision gates, and rollback criteria for the Northstar launch.",
+    "content": "The launch is in controlled rollout. Product owns the go/no-go decision, Support owns the escalation brief, and Engineering owns rollback execution.",
+    "tags": ["launch", "ownership", "operations"],
+    "owner": "Program Operations",
+    "updatedAt": "2026-07-20T14:30:00Z",
+    "validUntil": "2026-08-15T23:59:59Z",
+    "sources": [
+      {
+        "id": "decision-log-42",
+        "label": "Decision log 42",
+        "url": "https://example.invalid/northstar/decision-42",
+        "observedAt": "2026-07-20T14:00:00Z"
+      },
+      {
+        "id": "runbook-v3",
+        "label": "Launch runbook v3",
+        "url": "https://example.invalid/northstar/runbook-v3",
+        "observedAt": "2026-07-19T18:00:00Z"
+      }
+    ],
+    "claims": [
+      {
+        "text": "Northstar is in controlled rollout.",
+        "sourceIds": ["decision-log-42"]
+      },
+      {
+        "text": "Engineering owns rollback execution.",
+        "sourceIds": ["runbook-v3"]
+      }
+    ]
+  },
+  {
+    "id": "support-escalation",
+    "title": "Support Escalation Path",
+    "summary": "The current severity definitions and escalation owners for customer-impacting incidents.",
+    "content": "Severity 1 incidents page the incident commander and customer lead immediately. Severity 2 incidents enter the hourly triage queue.",
+    "tags": ["support", "incident", "ownership"],
+    "owner": "Customer Operations",
+    "updatedAt": "2026-07-18T16:00:00Z",
+    "validUntil": "2026-09-30T23:59:59Z",
+    "sources": [
+      {
+        "id": "support-policy-7",
+        "label": "Support policy 7",
+        "url": "https://example.invalid/support/policy-7",
+        "observedAt": "2026-07-18T15:30:00Z"
+      }
+    ],
+    "claims": [
+      {
+        "text": "Severity 1 incidents page the incident commander and customer lead.",
+        "sourceIds": ["support-policy-7"]
+      },
+      {
+        "text": "Severity 2 incidents enter hourly triage.",
+        "sourceIds": ["support-policy-7"]
+      }
+    ]
+  },
+  {
+    "id": "legacy-vendor-review",
+    "title": "Legacy Vendor Review",
+    "summary": "An expired assessment retained for historical comparison.",
+    "content": "The prior review approved the vendor for a limited pilot. Its approval window has expired and must not be treated as current authorization.",
+    "tags": ["vendor", "risk", "historical"],
+    "owner": "Risk Operations",
+    "updatedAt": "2026-05-15T12:00:00Z",
+    "validUntil": "2026-06-30T23:59:59Z",
+    "sources": [
+      {
+        "id": "risk-review-18",
+        "label": "Risk review 18",
+        "url": "https://example.invalid/risk/review-18",
+        "observedAt": "2026-05-15T11:00:00Z"
+      }
+    ],
+    "claims": [
+      {
+        "text": "The vendor was approved for a limited pilot.",
+        "sourceIds": ["risk-review-18"]
+      }
+    ]
+  }
+]

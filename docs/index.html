@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Inspect synthetic AI context records, provenance, and freshness."
+    />
+    <title>Context Layer Lab</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main>
+      <header class="masthead">
+        <p class="eyebrow">Context Layer Lab / public-safe fixture</p>
+        <h1>Trust starts before retrieval.</h1>
+        <p class="lede">
+          Inspect the ownership, freshness, claims, and source trail that an AI
+          system should receive with organizational context.
+        </p>
+      </header>
+
+      <section class="toolbar" aria-label="Record controls">
+        <label for="search">Search context</label>
+        <div class="search-row">
+          <input
+            id="search"
+            type="search"
+            placeholder="Try launch, support, or vendor"
+            autocomplete="off"
+          />
+          <p id="count" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section id="records" class="records" aria-label="Context records"></section>
+
+      <footer>
+        <p>
+          Synthetic data. No model call. No hidden score. Quality flags remain
+          attached to the context they describe.
+        </p>
+        <a href="https://github.com/Kaagemusha/context-layer-lab"
+          >Source and evaluations</a
+        >
+      </footer>
+    </main>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
