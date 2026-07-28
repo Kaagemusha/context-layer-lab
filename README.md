@@ -8,6 +8,8 @@ The lab stores synthetic organizational records with explicit ownership,
 freshness windows, sources, and claim-to-source links. It exposes the records
 through three read-only MCP tools and tests the failure modes directly.
 
+**[Open the live record inspector](https://kaagemusha.github.io/context-layer-lab/)**
+
 ## What It Demonstrates
 
 - A context record has a schema, an owner, a freshness boundary, and sources.

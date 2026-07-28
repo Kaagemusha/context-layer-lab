@@ -2,6 +2,11 @@
   "name": "context-layer-lab",
   "version": "0.1.0",
   "description": "A small, inspectable reference implementation for trustworthy AI context.",
+  "homepage": "https://kaagemusha.github.io/context-layer-lab/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kaagemusha/context-layer-lab.git"
+  },
   "type": "module",
   "private": false,
   "license": "MIT",
