@@ -53,7 +53,7 @@ server.registerTool(
     inputSchema: {
       query: z.string().min(1),
       asOf: z.string().datetime({ offset: true }).optional(),
-      limit: z.number().int().min(1).max(20).optional(),
+      limit: z.number().int().optional(),
     },
     annotations: {
       readOnlyHint: true,

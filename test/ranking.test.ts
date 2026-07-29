@@ -41,6 +41,10 @@ describe("tokenize", () => {
     assert.deepEqual(tokenize("the and of a"), []);
   });
 
+  test("preserves uppercase acronyms that overlap stopwords", () => {
+    assert.deepEqual(tokenize("IT supports it"), ["it", "supports"]);
+  });
+
   test("normalizes case and punctuation", () => {
     assert.deepEqual(tokenize("Launch-Readiness!"), [
       "launch",
@@ -122,6 +126,17 @@ describe("BM25F scoring", () => {
   test("handles an empty corpus", () => {
     const index = buildRankingIndex([]);
     assert.equal(scoreRecord(index, "missing", ["alpha"]), 0);
+  });
+
+  test("rejects duplicate record IDs", () => {
+    assert.throws(
+      () =>
+        buildRankingIndex([
+          record({ id: "duplicate", content: "alpha" }),
+          record({ id: "duplicate", content: "beta" }),
+        ]),
+      /Ranking records must have unique IDs: "duplicate"/,
+    );
   });
 });
 

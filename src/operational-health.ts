@@ -82,6 +82,20 @@ export type OperationalAssessment = z.infer<
   typeof operationalAssessmentSchema
 >;
 
+export function assessmentsConflict(
+  assessment: OperationalAssessment,
+): boolean {
+  return assessment.naiveVerdict !== assessment.governedVerdict;
+}
+
+export function selectedEvidenceRecordIds(
+  assessment: OperationalAssessment,
+): string[] {
+  return assessment.laneAssessments.flatMap((lane) =>
+    lane.evidenceRecordId ? [lane.evidenceRecordId] : [],
+  );
+}
+
 export function assessOperationalHealth(
   input: unknown,
   records: unknown[],
