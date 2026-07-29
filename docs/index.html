@@ -5,112 +5,207 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="See how evidence-aware context prevents an AI agent from trusting a stale operational dashboard."
+      content="A local-first diagnostic for reconciling stale summaries with current operational evidence."
     />
-    <title>Context Layer Lab</title>
+    <title>Context Layer Diagnostic</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
+    <header class="app-header">
+      <a class="brand" href="#console" aria-label="Context Layer Diagnostic home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Context Layer</span>
+      </a>
+      <nav aria-label="Page navigation">
+        <span class="privacy-state">Local processing only</span>
+        <a href="#proof">Engineering proof</a>
+      </nav>
+    </header>
+
     <main>
-      <header class="masthead">
-        <p class="eyebrow">Context Layer Lab / operational replay</p>
-        <h1>The dashboard said green.</h1>
-        <p class="lede">
-          Newer receipts showed two failures. This public-safe replay demonstrates
-          how an AI system can reject a stale summary before it gives the wrong
-          operational answer.
-        </p>
-        <div class="proof-strip" aria-label="Demonstration properties">
-          <span>Deterministic</span>
-          <span>No model call</span>
-          <span>Every conclusion traceable</span>
-        </div>
-      </header>
-
-      <section class="decision-demo" aria-labelledby="question">
-        <div class="question-row">
+      <section id="console" class="console" aria-labelledby="console-title">
+        <div class="console-head">
           <div>
-            <p class="eyebrow">The operational question</p>
+            <p class="kicker">Operator console</p>
+            <h1 id="console-title">Context health</h1>
+            <p class="console-intro">
+              Reconcile an earlier summary with the latest terminal evidence.
+            </p>
+          </div>
+          <div class="console-actions">
+            <input id="snapshot-file" type="file" accept=".json,application/json" hidden />
+            <button id="open-snapshot" class="button primary" type="button">
+              Open snapshot
+            </button>
+            <button id="load-sample" class="button secondary" type="button">
+              Reset sample
+            </button>
+          </div>
+        </div>
+
+        <div class="source-bar">
+          <div>
+            <span id="source-mode" class="source-mode">Synthetic sample</span>
+            <span id="source-message" role="status">
+              Open a private JSON snapshot to inspect it in this browser.
+            </span>
+          </div>
+          <span>Nothing is uploaded or stored.</span>
+        </div>
+
+        <div class="status-grid">
+          <article id="verdict-card" class="verdict-card">
+            <div class="section-label">
+              <span>Current answer</span>
+              <time id="as-of"></time>
+            </div>
+            <p id="verdict" class="verdict">Needs attention</p>
             <h2 id="question">Are all scheduled automations healthy?</h2>
-          </div>
-          <p class="as-of">Evidence as of <time id="as-of"></time></p>
-        </div>
-
-        <div class="answer-grid">
-          <article class="answer naive">
-            <p class="answer-label">Summary-only answer</p>
-            <p class="answer-verdict">Yes.</p>
-            <p>The latest dashboard is GREEN.</p>
-            <p class="answer-flag">Wrong because the summary expired before newer runs completed.</p>
+            <p id="verdict-detail" class="verdict-detail"></p>
+            <button id="copy-report" class="text-button" type="button">
+              Copy concise report
+            </button>
           </article>
-          <article class="answer governed">
-            <p class="answer-label">Evidence-aware answer</p>
-            <p class="answer-verdict">No.</p>
-            <p><strong id="attention-count">Two lanes</strong> need attention.</p>
-            <p class="answer-flag">Newer terminal receipts override the stale rollup.</p>
+
+          <article id="conflict-card" class="conflict-card">
+            <div class="section-label">
+              <span>Evidence conflict</span>
+              <span id="conflict-state">Detected</span>
+            </div>
+            <div class="comparison">
+              <div>
+                <span>Earlier summary</span>
+                <strong id="summary-verdict"></strong>
+                <time id="summary-time"></time>
+              </div>
+              <span class="comparison-arrow" aria-hidden="true">→</span>
+              <div>
+                <span>Current evidence</span>
+                <strong id="current-verdict"></strong>
+                <time id="current-time"></time>
+              </div>
+            </div>
+            <p id="conflict-explanation"></p>
           </article>
         </div>
 
-        <div class="prevented">
-          <span class="prevented-mark" aria-hidden="true">×</span>
+        <div class="workbench">
+          <section class="lane-panel" aria-labelledby="lane-title">
+            <div class="panel-head">
+              <div>
+                <p class="kicker">Lane status</p>
+                <h2 id="lane-title">What needs attention</h2>
+              </div>
+              <span id="lane-count"></span>
+            </div>
+            <div id="lanes" class="lane-list"></div>
+          </section>
+
+          <aside class="rule-panel" aria-labelledby="rule-title">
+            <div class="panel-head">
+              <div>
+                <p class="kicker">Decision checks</p>
+                <h2 id="rule-title">Why this answer</h2>
+              </div>
+            </div>
+            <div id="rules" class="rule-list"></div>
+          </aside>
+        </div>
+
+        <details class="timeline-panel">
+          <summary>
+            <span>
+              <span class="kicker">Evidence timeline</span>
+              <strong>Inspect chronology</strong>
+            </span>
+            <span id="timeline-count"></span>
+          </summary>
+          <ol id="timeline" class="timeline"></ol>
+        </details>
+      </section>
+
+      <section id="proof" class="proof" aria-labelledby="proof-title">
+        <div class="proof-head">
           <div>
-            <p class="eyebrow">Decision prevented</p>
-            <p>An operator does not walk away believing a failed refresh and stranded research run are healthy.</p>
+            <p class="kicker">Engineering proof</p>
+            <h2 id="proof-title">Small, inspectable, and bounded.</h2>
           </div>
+          <p>
+            The console is the product surface. This section shows why its answer
+            can be trusted without turning the workflow into a case study.
+          </p>
         </div>
 
-        <div class="lane-heading">
-          <div>
-            <p class="eyebrow">Reconciled lane state</p>
-            <h3>What the receipts actually establish</h3>
-          </div>
-          <p>Not due is not failure. Preserved locally is not integrated.</p>
+        <div class="proof-metrics" aria-label="Implementation properties">
+          <article>
+            <strong>Deterministic</strong>
+            <span>Same packet, same answer</span>
+          </article>
+          <article>
+            <strong>Zero model calls</strong>
+            <span>Rules run locally</span>
+          </article>
+          <article>
+            <strong>6 explicit evaluations</strong>
+            <span>Freshness and evidence gaps included</span>
+          </article>
+          <article>
+            <strong>Fail-closed</strong>
+            <span>Missing proof cannot become healthy</span>
+          </article>
         </div>
-        <div id="lanes" class="lanes"></div>
-      </section>
 
-      <section class="method" aria-labelledby="method-heading">
-        <p class="eyebrow">The context layer</p>
-        <h2 id="method-heading">A small layer with a consequential job.</h2>
-        <div class="method-grid">
-          <article><span>01</span><h3>Carry state</h3><p>Ownership, freshness, source identity, and terminal outcome travel with each record.</p></article>
-          <article><span>02</span><h3>Reconcile time</h3><p>Later, more specific receipts supersede an earlier aggregate without deleting history.</p></article>
-          <article><span>03</span><h3>Fail visibly</h3><p>Missing or unsupported evidence becomes part of the answer instead of disappearing.</p></article>
+        <div class="proof-grid">
+          <article>
+            <p class="kicker">Operational path</p>
+            <h3>Generate, open, decide.</h3>
+            <ol>
+              <li>Create a snapshot from scenario and evidence records.</li>
+              <li>Open it locally in the console; no server receives it.</li>
+              <li>Copy the bounded report or inspect the exact source record.</li>
+            </ol>
+            <code>npm run diagnose -- --output snapshot.json</code>
+          </article>
+          <article>
+            <p class="kicker">Evidence boundary</p>
+            <h3>What it proves, and what it does not.</h3>
+            <p>
+              It proves the supplied records support the displayed operational
+              conclusion under explicit freshness and schedule rules.
+            </p>
+            <p>
+              It does not prove an external source is true, replace authorization,
+              or silently infer missing state.
+            </p>
+          </article>
         </div>
+
+        <footer>
+          <span>Synthetic sample data. Private snapshots remain on the device.</span>
+          <span>
+            <a href="https://github.com/Kaagemusha/context-layer-lab">Source</a>
+            <a href="https://github.com/Kaagemusha/context-layer-lab/tree/main/evals"
+              >Evaluations</a
+            >
+          </span>
+        </footer>
       </section>
-
-      <section class="inspector-heading" aria-labelledby="inspector-title">
-        <p class="eyebrow">Inspect the proof</p>
-        <h2 id="inspector-title">Every answer opens into evidence.</h2>
-        <p>These synthetic records use the same schema, provenance checks, freshness rules, and deterministic ingestion receipts exposed through the MCP server.</p>
-      </section>
-
-      <section class="toolbar" aria-label="Evidence record controls">
-        <label for="search">Search context</label>
-        <div class="search-row">
-          <input
-            id="search"
-            type="search"
-            placeholder="Try launch, support, or vendor"
-            autocomplete="off"
-          />
-          <p id="count" aria-live="polite"></p>
-        </div>
-      </section>
-
-      <section id="records" class="records" aria-label="Context records"></section>
-
-      <footer>
-        <p>
-          Synthetic data modeled on a real class of agent failure. No private
-          vault structure, operating logs, or personal information.
-        </p>
-        <a href="https://github.com/Kaagemusha/context-layer-lab"
-          >Source and evaluations</a
-        >
-      </footer>
     </main>
+
+    <dialog id="evidence-dialog" aria-labelledby="evidence-title">
+      <div class="dialog-head">
+        <div>
+          <p class="kicker">Evidence record</p>
+          <h2 id="evidence-title"></h2>
+        </div>
+        <button id="close-evidence" class="icon-button" type="button" aria-label="Close">
+          ×
+        </button>
+      </div>
+      <div id="evidence-content"></div>
+    </dialog>
+
     <script type="module" src="./app.js"></script>
   </body>
 </html>

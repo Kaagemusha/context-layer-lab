@@ -1,17 +1,8 @@
 import { readFile, writeFile } from "node:fs/promises";
 
-import { assessOperationalHealth } from "../dist/src/operational-health.js";
+import { buildDiagnosticSnapshot } from "../dist/src/diagnostic-snapshot.js";
 
-const files = [
-  ["data/context-records.json", "docs/records.json"],
-  ["data/ingestion-receipts.json", "docs/receipts.json"],
-];
-const copies = await Promise.all(
-  files.map(async ([source, destination]) => ({
-    destination,
-    expected: await readFile(new URL(`../${source}`, import.meta.url), "utf8"),
-  })),
-);
+const copies = [];
 const operationalFixture = JSON.parse(
   await readFile(
     new URL("../evals/operational-health.json", import.meta.url),
@@ -24,10 +15,7 @@ const records = JSON.parse(
 copies.push({
   destination: "docs/operational-health.json",
   expected: `${JSON.stringify(
-    {
-      scenario: operationalFixture.scenario,
-      assessment: assessOperationalHealth(operationalFixture.scenario, records),
-    },
+    buildDiagnosticSnapshot(operationalFixture.scenario, records),
     null,
     2,
   )}\n`,
@@ -59,5 +47,5 @@ if (process.argv.includes("--check")) {
       ),
     ),
   );
-  console.log("synced generated records and receipts to docs");
+  console.log("synced diagnostic sample to docs");
 }
