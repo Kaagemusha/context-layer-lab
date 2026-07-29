@@ -1,0 +1,76 @@
+[
+  {
+    "name": "whole-token matching",
+    "query": "out",
+    "expect": {
+      "empty": true
+    },
+    "why": "A substring scorer matched 'out' inside 'rollout'. Query terms must be whole tokens."
+  },
+  {
+    "name": "stopwords carry no signal",
+    "query": "the",
+    "expect": {
+      "empty": true
+    },
+    "why": "A common stopword should not produce a confident ranking."
+  },
+  {
+    "name": "distinctive term outranks common one",
+    "query": "escalation",
+    "expect": {
+      "topId": "support-escalation"
+    },
+    "why": "A distinctive term should rank its record first as the corpus grows."
+  },
+  {
+    "name": "title match beats body match",
+    "query": "vendor",
+    "expect": {
+      "topId": "legacy-vendor-review"
+    },
+    "why": "A curated title is stronger evidence of aboutness than an incidental body match."
+  },
+  {
+    "name": "no query terms returns nothing",
+    "query": "   ",
+    "expect": {
+      "empty": true
+    },
+    "why": "An empty query is not a match-everything query."
+  },
+  {
+    "name": "unmatched term returns nothing",
+    "query": "zzzznonexistent",
+    "expect": {
+      "empty": true
+    },
+    "why": "Absence of results is a valid answer."
+  },
+  {
+    "name": "quality flags travel with results",
+    "query": "rollout",
+    "expect": {
+      "nonEmpty": true,
+      "everyResultHasState": true
+    },
+    "why": "Retrieval must preserve each result's freshness and evidence state."
+  },
+  {
+    "name": "results are bounded by default",
+    "query": "ownership",
+    "expect": {
+      "maxResults": 5
+    },
+    "why": "An agent-facing retrieval tool should return a bounded ranked set."
+  },
+  {
+    "name": "an oversized limit is capped",
+    "query": "ownership",
+    "limit": 9999,
+    "expect": {
+      "maxResults": 20
+    },
+    "why": "A caller cannot use an oversized request to retrieve the whole corpus."
+  }
+]

@@ -33,6 +33,7 @@ The implementation demonstrates that:
 - `PRESERVED_LOCAL` is not confused with successful integration;
 - every conclusion links to a typed evidence record;
 - malformed, unsupported, missing, and stale context fail visibly;
+- search uses bounded BM25F ranking rather than unbounded term counts;
 - the full replay and evaluation are deterministic and require no model call.
 
 This is not a RAG benchmark, vector database, production authorization layer,
@@ -89,13 +90,22 @@ Add the compiled stdio server to an MCP client:
 
 | Tool | Purpose |
 |---|---|
-| `search_context` | Search records and return ranked matches with quality flags and source IDs. |
+| `search_context` | Return up to 5 ranked matches by default, capped at 20, with quality flags and source IDs. |
 | `explain_source` | Show one source and the exact claims it supports. |
 | `inspect_ingestion` | Trace one record to its Markdown document and content hash. |
 | `validate_record` | Validate an arbitrary record against the schema and evidence rules. |
 
 All tools are read-only. They do not generate answers, mutate records, or call
 external services.
+
+## Retrieval
+
+`search_context` uses BM25F with per-field length normalization, inverse
+document frequency, and term-frequency saturation. Titles and tags outweigh
+free text. Whole-token matching prevents `out` from matching `rollout`;
+stopword removal prevents a query such as `the` from producing false
+confidence. Nine retrieval evaluations keep those properties, result bounds,
+and visible quality states from silently regressing.
 
 ## Data Contract
 
@@ -122,7 +132,7 @@ drifts.
 
 ## Evaluations
 
-`npm run eval` checks six explicit cases:
+`npm run eval` checks six validation and operational cases:
 
 1. valid context
 2. stale context
@@ -135,6 +145,11 @@ The record cases live in [`evals/cases.json`](evals/cases.json); the operational
 replay lives in
 [`evals/operational-health.json`](evals/operational-health.json). A case passes
 only when the observed result exactly matches the expected result.
+
+It then runs nine independent retrieval cases from
+[`evals/retrieval-cases.json`](evals/retrieval-cases.json). Validation asks
+whether a record is correctly described; retrieval asks whether search returns
+the right bounded evidence. Both need to pass.
 
 ## Architecture
 
@@ -205,8 +220,8 @@ test/             unit and contract tests
   incident-management engine.
 - Recency is based on an explicit `validUntil`, not inferred from content.
 - Source URLs are identifiers in this lab; the validator does not fetch them.
-- Lexical ranking is intentionally simple and should be replaced only when a
-  larger corpus demonstrates the need.
+- BM25F remains lexical by design; add embeddings only when a larger corpus and
+  retrieval evaluations demonstrate the need.
 - A production system would add signed changes, access policy, observability,
   and human correction workflows.
 
@@ -216,6 +231,7 @@ test/             unit and contract tests
 npm run typecheck
 npm test
 npm run eval
+npm run eval:retrieval
 npm run ingest:check
 npm run demo:check
 ```

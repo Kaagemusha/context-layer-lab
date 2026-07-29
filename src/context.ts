@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { buildRankingIndex, scoreRecord, tokenize } from "./ranking.js";
+
 export const sourceSchema = z
   .object({
     id: z.string().min(1),
@@ -140,54 +142,38 @@ export function validateRecord(
   };
 }
 
-function terms(value: string): string[] {
-  return value.toLowerCase().match(/[a-z0-9]+/g) ?? [];
-}
-
-function occurrences(haystack: string[], needle: string): number {
-  return haystack.filter((term) => term.includes(needle)).length;
-}
-
-function relevance(record: ContextRecord, queryTerms: string[]): number {
-  const fields = [
-    { terms: terms(record.title), weight: 5 },
-    { terms: record.tags.flatMap(terms), weight: 4 },
-    { terms: terms(record.summary), weight: 3 },
-    { terms: terms(record.content), weight: 1 },
-    { terms: record.claims.flatMap((claim) => terms(claim.text)), weight: 1 },
-  ];
-
-  return queryTerms.reduce(
-    (total, queryTerm) =>
-      total +
-      fields.reduce(
-        (fieldTotal, field) =>
-          fieldTotal + occurrences(field.terms, queryTerm) * field.weight,
-        0,
-      ),
-    0,
-  );
-}
+export const DEFAULT_SEARCH_LIMIT = 5;
+export const MAX_SEARCH_LIMIT = 20;
 
 export function searchContext(
   records: unknown[],
   query: string,
   asOf = new Date(),
+  limit = DEFAULT_SEARCH_LIMIT,
 ): SearchResult[] {
-  const queryTerms = [...new Set(terms(query))];
+  const effectiveLimit = Math.max(
+    1,
+    Math.min(Math.floor(limit), MAX_SEARCH_LIMIT),
+  );
+  const queryTerms = [...new Set(tokenize(query))];
   if (queryTerms.length === 0) {
     return [];
   }
 
-  return records
+  const validated = records
     .map((input) => validateRecord(input, asOf))
     .filter(
       (result): result is ValidationResult & { record: ContextRecord } =>
         result.record !== undefined,
-    )
+    );
+  const ranking = buildRankingIndex(
+    validated.map((result) => result.record),
+  );
+
+  return validated
     .map((result) => ({
       result,
-      score: relevance(result.record, queryTerms),
+      score: scoreRecord(ranking, result.record.id, queryTerms),
     }))
     .filter(({ score }) => score > 0)
     .sort(
@@ -195,6 +181,7 @@ export function searchContext(
         right.score - left.score ||
         left.result.record.title.localeCompare(right.result.record.title),
     )
+    .slice(0, effectiveLimit)
     .map(({ result, score }) => ({
       id: result.record.id,
       title: result.record.title,

@@ -49,10 +49,11 @@ server.registerTool(
   "search_context",
   {
     description:
-      "Search synthetic organizational context. Returns source IDs and visible freshness or evidence issues with every match.",
+      "Search synthetic organizational context. Returns a bounded, ranked set with source IDs and visible freshness or evidence issues on every match.",
     inputSchema: {
       query: z.string().min(1),
       asOf: z.string().datetime({ offset: true }).optional(),
+      limit: z.number().int().min(1).max(20).optional(),
     },
     annotations: {
       readOnlyHint: true,
