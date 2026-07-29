@@ -45,9 +45,16 @@ const STOPWORDS = new Set([
 ]);
 
 export function tokenize(value: string): string[] {
-  return (value.toLowerCase().match(/[a-z0-9]+/g) ?? []).filter(
-    (token) => !STOPWORDS.has(token),
-  );
+  return (value.match(/[a-z0-9]+/gi) ?? [])
+    .map((source) => ({
+      source,
+      token: source.toLowerCase(),
+    }))
+    .filter(
+      ({ source, token }) =>
+        /^[A-Z0-9]{2,}$/.test(source) || !STOPWORDS.has(token),
+    )
+    .map(({ token }) => token);
 }
 
 function fieldTokens(record: ContextRecord): Record<FieldName, string[]> {
@@ -72,6 +79,14 @@ export type RankingIndex = {
 };
 
 export function buildRankingIndex(records: ContextRecord[]): RankingIndex {
+  const recordIds = new Set<string>();
+  for (const record of records) {
+    if (recordIds.has(record.id)) {
+      throw new Error(`Ranking records must have unique IDs: "${record.id}".`);
+    }
+    recordIds.add(record.id);
+  }
+
   const postings: RankingIndex["postings"] = new Map();
   const fieldLengths: RankingIndex["fieldLengths"] = new Map();
   const documentFrequency = new Map<string, number>();
