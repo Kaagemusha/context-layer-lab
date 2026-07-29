@@ -1,0 +1,76 @@
+[
+  {
+    "name": "whole-token matching",
+    "query": "out",
+    "expect": {
+      "empty": true
+    },
+    "why": "A substring scorer matched 'out' inside 'rollout'. Query terms are whole tokens, so this must return nothing."
+  },
+  {
+    "name": "stopwords carry no signal",
+    "query": "the",
+    "expect": {
+      "empty": true
+    },
+    "why": "Without stopword removal and IDF, 'the' produced a confident ranking over every record that happened to contain it."
+  },
+  {
+    "name": "distinctive term outranks common one",
+    "query": "escalation",
+    "expect": {
+      "topId": "support-escalation"
+    },
+    "why": "A term appearing in one record should rank that record first. IDF is what makes this hold when the corpus grows."
+  },
+  {
+    "name": "title match beats body match",
+    "query": "vendor",
+    "expect": {
+      "topId": "legacy-vendor-review"
+    },
+    "why": "Field weighting: a curated title is stronger evidence of aboutness than an incidental body mention."
+  },
+  {
+    "name": "no query terms returns nothing",
+    "query": "   ",
+    "expect": {
+      "empty": true
+    },
+    "why": "An empty query is not a match-everything query."
+  },
+  {
+    "name": "unmatched term returns nothing",
+    "query": "zzzznonexistent",
+    "expect": {
+      "empty": true
+    },
+    "why": "Absence of results is a valid, honest answer."
+  },
+  {
+    "name": "quality flags travel with results",
+    "query": "rollout",
+    "expect": {
+      "nonEmpty": true,
+      "everyResultHasState": true
+    },
+    "why": "Retrieval must not hide staleness or missing provenance behind a rank. Every hit carries its validation state."
+  },
+  {
+    "name": "results are bounded by default",
+    "query": "ownership",
+    "expect": {
+      "maxResults": 5
+    },
+    "why": "An agent-facing retrieval tool must return a bounded ranked set. Returning every positive match grows with the corpus rather than with relevance."
+  },
+  {
+    "name": "an oversized limit is capped, not honoured",
+    "query": "ownership",
+    "limit": 9999,
+    "expect": {
+      "maxResults": 20
+    },
+    "why": "A caller asking for 9999 results should be silently capped rather than handed the whole corpus."
+  }
+]

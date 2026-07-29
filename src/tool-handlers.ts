@@ -1,4 +1,6 @@
 import {
+  DEFAULT_SEARCH_LIMIT,
+  MAX_SEARCH_LIMIT,
   explainSource,
   searchContext,
   validateRecord,
@@ -24,12 +26,15 @@ function parseAsOf(value?: string): Date {
 
 export function handleSearch(
   records: unknown[],
-  input: { query: string; asOf?: string | undefined },
-): ToolResponse<{ query: string; matches: SearchResult[] }> {
-  const matches = searchContext(records, input.query, parseAsOf(input.asOf));
+  input: { query: string; asOf?: string | undefined; limit?: number | undefined },
+): ToolResponse<{ query: string; matches: SearchResult[]; limit: number }> {
+  const limit = input.limit ?? DEFAULT_SEARCH_LIMIT;
+  const matches = searchContext(records, input.query, parseAsOf(input.asOf), limit);
   return {
     ok: true,
-    result: { query: input.query, matches },
+    // The effective limit is echoed back so a caller can tell a truncated
+    // result set from an exhaustive one.
+    result: { query: input.query, matches, limit: Math.min(limit, MAX_SEARCH_LIMIT) },
   };
 }
 
