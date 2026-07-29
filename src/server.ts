@@ -4,9 +4,10 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 
-import { loadRecords } from "./store.js";
+import { loadContextSnapshot } from "./store.js";
 import {
   handleExplainSource,
+  handleInspectIngestion,
   handleSearch,
   handleValidate,
 } from "./tool-handlers.js";
@@ -18,11 +19,31 @@ function toolResult(value: unknown, isError = false) {
   };
 }
 
-const records = await loadRecords();
+const { records, receipts } = await loadContextSnapshot();
 const server = new McpServer({
   name: "context-layer-lab",
   version: "0.1.0",
 });
+
+server.registerTool(
+  "inspect_ingestion",
+  {
+    description:
+      "Show the deterministic receipt linking one context record to its synthetic Markdown source.",
+    inputSchema: {
+      recordId: z.string().min(1),
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+    },
+  },
+  async (input) => {
+    const response = handleInspectIngestion(receipts, input);
+    return toolResult(response, !response.ok);
+  },
+);
 
 server.registerTool(
   "search_context",

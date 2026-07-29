@@ -1,12 +1,19 @@
 const recordsRoot = document.querySelector("#records");
 const search = document.querySelector("#search");
 const count = document.querySelector("#count");
-const records = await fetch("./records.json").then((response) => {
-  if (!response.ok) {
-    throw new Error(`Could not load records: ${response.status}`);
-  }
-  return response.json();
-});
+const [records, receipts] = await Promise.all(
+  ["records.json", "receipts.json"].map((file) =>
+    fetch(`./${file}`).then((response) => {
+      if (!response.ok) {
+        throw new Error(`Could not load ${file}: ${response.status}`);
+      }
+      return response.json();
+    }),
+  ),
+);
+const receiptsByRecord = new Map(
+  receipts.map((receipt) => [receipt.recordId, receipt]),
+);
 
 const asOf = new Date("2026-07-28T12:00:00Z");
 
@@ -42,6 +49,7 @@ function quality(record) {
 function recordMarkup(record) {
   const issues = quality(record);
   const state = issues.length ? "degraded" : "current";
+  const receipt = receiptsByRecord.get(record.id);
   return `
     <article class="record">
       <div>
@@ -58,6 +66,12 @@ function recordMarkup(record) {
           <dt>Owner</dt><dd>${escapeHtml(record.owner)}</dd>
           <dt>Updated</dt><dd>${escapeHtml(record.updatedAt.slice(0, 10))}</dd>
           <dt>Valid until</dt><dd>${escapeHtml(record.validUntil.slice(0, 10))}</dd>
+          ${
+            receipt
+              ? `<dt>Source document</dt><dd><code>${escapeHtml(receipt.documentPath)}</code></dd>
+          <dt>Content SHA-256</dt><dd><code>${escapeHtml(receipt.contentSha256.slice(0, 16))}...</code></dd>`
+              : ""
+          }
         </dl>
       </div>
       <div class="panel">

@@ -21,7 +21,12 @@ test("an MCP client can discover and call the stdio server", async () => {
     const listed = await client.listTools();
     assert.deepEqual(
       listed.tools.map((tool) => tool.name).sort(),
-      ["explain_source", "search_context", "validate_record"],
+      [
+        "explain_source",
+        "inspect_ingestion",
+        "search_context",
+        "validate_record",
+      ],
     );
 
     const response = await client.callTool({
@@ -33,6 +38,13 @@ test("an MCP client can discover and call the stdio server", async () => {
     });
     assert.equal(response.isError, false);
     assert.match(JSON.stringify(response.content), /launch-readiness/);
+
+    const receipt = await client.callTool({
+      name: "inspect_ingestion",
+      arguments: { recordId: "launch-readiness" },
+    });
+    assert.equal(receipt.isError, false);
+    assert.match(JSON.stringify(receipt.content), /01-northstar-launch\.md/);
   } finally {
     await client.close();
   }

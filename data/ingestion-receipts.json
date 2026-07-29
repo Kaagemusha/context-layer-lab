@@ -1,0 +1,33 @@
+[
+  {
+    "recordId": "launch-readiness",
+    "documentPath": "fixtures/source-docs/01-northstar-launch.md",
+    "contentSha256": "9d32c6025c3c4a93b8c62b931cc2bdfa3edc6e2ab5d4c44821cd4b432bcadbdb",
+    "byteLength": 1091,
+    "declaredSourceIds": [
+      "decision-log-42",
+      "runbook-v3"
+    ],
+    "recordUpdatedAt": "2026-07-20T14:30:00Z"
+  },
+  {
+    "recordId": "support-escalation",
+    "documentPath": "fixtures/source-docs/02-support-escalation.md",
+    "contentSha256": "7543c9a2c0d02023b325ac849751e67c54677483e8b7f41ab602b9fc07bf8038",
+    "byteLength": 944,
+    "declaredSourceIds": [
+      "support-policy-7"
+    ],
+    "recordUpdatedAt": "2026-07-18T16:00:00Z"
+  },
+  {
+    "recordId": "legacy-vendor-review",
+    "documentPath": "fixtures/source-docs/03-legacy-vendor-review.md",
+    "contentSha256": "77696402ce42ca415ddd92dafcf5beaf38bf286120c48cc1a7b1da3f69c1388e",
+    "byteLength": 769,
+    "declaredSourceIds": [
+      "risk-review-18"
+    ],
+    "recordUpdatedAt": "2026-05-15T12:00:00Z"
+  }
+]

@@ -4,6 +4,7 @@ import test from "node:test";
 import type { ContextRecord } from "../src/context.js";
 import {
   handleExplainSource,
+  handleInspectIngestion,
   handleSearch,
   handleValidate,
 } from "../src/tool-handlers.js";
@@ -54,5 +55,26 @@ test("validate handler rejects an invalid asOf value", () => {
   assert.throws(
     () => handleValidate({ record, asOf: "not-a-date" }),
     /Invalid asOf timestamp/,
+  );
+});
+
+test("ingestion handler returns the receipt for a record", () => {
+  const response = handleInspectIngestion(
+    [
+      {
+        recordId: "handoff",
+        documentPath: "fixtures/source-docs/handoff.md",
+        contentSha256: "a".repeat(64),
+        byteLength: 100,
+        declaredSourceIds: ["policy"],
+        recordUpdatedAt: "2026-07-20T12:00:00Z",
+      },
+    ],
+    { recordId: "handoff" },
+  );
+  assert.equal(response.ok, true);
+  assert.equal(
+    response.result.found && response.result.receipt.documentPath,
+    "fixtures/source-docs/handoff.md",
   );
 });
