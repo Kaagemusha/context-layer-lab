@@ -1,4 +1,8 @@
-const SNAPSHOT_FORMAT = "context-layer-diagnostic/v1";
+import {
+  searchContext,
+  verifyDiagnosticSnapshot,
+} from "./runtime.js";
+
 const sampleSnapshot = await fetch("./operational-health.json").then((response) => {
   if (!response.ok) throw new Error(`Could not load sample: ${response.status}`);
   return response.json();
@@ -28,31 +32,18 @@ const elements = {
   rules: document.querySelector("#rules"),
   timeline: document.querySelector("#timeline"),
   timelineCount: document.querySelector("#timeline-count"),
+  searchForm: document.querySelector("#search-form"),
+  searchQuery: document.querySelector("#search-query"),
+  searchResults: document.querySelector("#search-results"),
+  searchCount: document.querySelector("#search-count"),
   dialog: document.querySelector("#evidence-dialog"),
   dialogTitle: document.querySelector("#evidence-title"),
   dialogContent: document.querySelector("#evidence-content"),
   closeDialog: document.querySelector("#close-evidence"),
 };
 
-let snapshot = validateSnapshot(sampleSnapshot);
+let snapshot = verifyDiagnosticSnapshot(sampleSnapshot);
 let sourceName = "Synthetic sample";
-
-function validateSnapshot(input) {
-  if (!input || input.format !== SNAPSHOT_FORMAT) {
-    throw new Error(`Expected snapshot format "${SNAPSHOT_FORMAT}".`);
-  }
-  if (
-    !input.scenario ||
-    !input.assessment ||
-    !Array.isArray(input.scenario.lanes) ||
-    !Array.isArray(input.scenario.receipts) ||
-    !Array.isArray(input.assessment.laneAssessments) ||
-    !Array.isArray(input.records)
-  ) {
-    throw new Error("Snapshot is missing scenario, assessment, or evidence records.");
-  }
-  return input;
-}
 
 function escapeHtml(value) {
   return String(value)
@@ -193,6 +184,44 @@ function renderTimeline() {
     .join("");
 }
 
+function renderSearch() {
+  const query = elements.searchQuery.value.trim();
+  const results = query
+    ? searchContext(
+        snapshot.records,
+        query,
+        new Date(snapshot.scenario.asOf),
+        5,
+      )
+    : [];
+
+  elements.searchCount.textContent = query
+    ? `${results.length} ${results.length === 1 ? "match" : "matches"}`
+    : "BM25F · max 5";
+  elements.searchResults.innerHTML = query
+    ? results.length
+      ? results
+          .map(
+            (result) => `
+              <article class="search-result">
+                <div>
+                  <strong>${escapeHtml(result.title)}</strong>
+                  <span>${escapeHtml(result.summary)}</span>
+                </div>
+                <span class="status-chip ${escapeHtml(result.state)}">${escapeHtml(
+                  titleCase(result.state),
+                )}</span>
+                <button class="row-action" type="button" data-evidence-id="${escapeHtml(
+                  result.id,
+                )}">Inspect</button>
+              </article>
+            `,
+          )
+          .join("")
+      : '<p class="empty-search">No evidence in this packet matches that query.</p>'
+    : '<p class="empty-search">Search is local, bounded, and carries quality states with every result.</p>';
+}
+
 function renderRules() {
   const assessment = snapshot.assessment;
   const dueLanes = assessment.laneAssessments.filter(
@@ -267,6 +296,7 @@ function render() {
   elements.lanes.innerHTML = assessment.laneAssessments.map(laneMarkup).join("");
   renderRules();
   renderTimeline();
+  renderSearch();
 }
 
 function reportText() {
@@ -352,14 +382,16 @@ function showEvidence(recordId) {
 async function loadFile(file) {
   try {
     const parsed = JSON.parse(await file.text());
-    snapshot = validateSnapshot(parsed);
+    snapshot = verifyDiagnosticSnapshot(parsed);
     sourceName = `Local snapshot · ${file.name}`;
     elements.sourceMessage.textContent =
       "Loaded in memory for this tab only. Refresh to clear it.";
     render();
   } catch (error) {
     elements.sourceMessage.textContent =
-      error instanceof Error ? error.message : "Could not read snapshot.";
+      error instanceof Error
+        ? `Snapshot rejected: ${error.message}`
+        : "Snapshot rejected: could not read the file.";
   } finally {
     elements.file.value = "";
   }
@@ -371,13 +403,18 @@ elements.file.addEventListener("change", () => {
   if (file) loadFile(file);
 });
 elements.reset.addEventListener("click", () => {
-  snapshot = validateSnapshot(sampleSnapshot);
+  snapshot = verifyDiagnosticSnapshot(sampleSnapshot);
   sourceName = "Synthetic sample";
   elements.sourceMessage.textContent =
     "Open a private JSON snapshot to inspect it in this browser.";
   render();
 });
 elements.copy.addEventListener("click", copyReport);
+elements.searchForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  renderSearch();
+});
+elements.searchQuery.addEventListener("input", renderSearch);
 elements.closeDialog.addEventListener("click", () => elements.dialog.close());
 elements.dialog.addEventListener("click", (event) => {
   if (event.target === elements.dialog) elements.dialog.close();

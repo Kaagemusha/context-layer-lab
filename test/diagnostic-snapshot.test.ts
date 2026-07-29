@@ -5,6 +5,7 @@ import test from "node:test";
 import {
   buildDiagnosticSnapshot,
   DIAGNOSTIC_SNAPSHOT_FORMAT,
+  verifyDiagnosticSnapshot,
 } from "../src/diagnostic-snapshot.js";
 
 const fixture = JSON.parse(
@@ -40,5 +41,41 @@ test("snapshot generation is deterministic", () => {
   assert.deepEqual(
     buildDiagnosticSnapshot(fixture.scenario, records),
     buildDiagnosticSnapshot(fixture.scenario, records),
+  );
+});
+
+test("rejects an asserted assessment that its evidence does not support", () => {
+  const snapshot = buildDiagnosticSnapshot(fixture.scenario, records);
+  assert.throws(
+    () =>
+      verifyDiagnosticSnapshot({
+        ...snapshot,
+        records: [],
+        assessment: {
+          ...snapshot.assessment,
+          governedVerdict: "healthy",
+        },
+      }),
+    /Operational evidence record .* was not found/,
+  );
+});
+
+test("rejects unknown lane states before rendering", () => {
+  const snapshot = buildDiagnosticSnapshot(fixture.scenario, records);
+  assert.throws(
+    () =>
+      verifyDiagnosticSnapshot({
+        ...snapshot,
+        assessment: {
+          ...snapshot.assessment,
+          laneAssessments: snapshot.assessment.laneAssessments.map(
+            (lane, index) =>
+              index === 0
+                ? { ...lane, state: "totally-made-up-state" }
+                : lane,
+          ),
+        },
+      }),
+    /Invalid option/,
   );
 });

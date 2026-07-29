@@ -1,0 +1,54 @@
+{
+  "format": "context-layer-trajectory-adapter/v1",
+  "question": "Did every scheduled lane finish cleanly?",
+  "asOf": "2026-07-28T09:15:00Z",
+  "validityHours": 24,
+  "summary": {
+    "observedAt": "2026-07-28T07:30:00Z",
+    "validUntil": "2026-07-28T07:59:59Z",
+    "verdict": "healthy",
+    "text": "The morning rollup reported every scheduled lane healthy.",
+    "sourceUrl": "https://example.invalid/trajectory/summary"
+  },
+  "lanes": [
+    {
+      "id": "brief",
+      "label": "Morning Brief",
+      "dueAt": "2026-07-28T08:00:00Z"
+    },
+    {
+      "id": "site",
+      "label": "Site Refresh",
+      "dueAt": "2026-07-28T08:30:00Z"
+    }
+  ],
+  "runs": [
+    {
+      "schema_version": "trajectory-run-v1",
+      "run_id": "run-brief-001",
+      "ended_at": "2026-07-28T08:02:00Z",
+      "task": {
+        "summary": "Scheduled morning brief",
+        "lane": "brief"
+      },
+      "result": {
+        "state": "success",
+        "summary": "The brief was generated and delivered."
+      }
+    },
+    {
+      "schema_version": "trajectory-run-v1",
+      "run_id": "run-site-001",
+      "ended_at": "2026-07-28T08:41:00Z",
+      "task": {
+        "summary": "Scheduled site refresh",
+        "lane": "site"
+      },
+      "result": {
+        "state": "unknown",
+        "summary": "Work was preserved, but publication was not confirmed."
+      }
+    }
+  ],
+  "sourceBaseUrl": "https://example.invalid/trajectory/runs/"
+}

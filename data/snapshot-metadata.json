@@ -1,0 +1,8 @@
+{
+  "snapshotAsOf": "2026-07-28T09:10:00Z",
+  "ageThresholdDays": 45,
+  "intentionalStaleRecordIds": [
+    "fleet-health-rollup",
+    "legacy-vendor-review"
+  ]
+}

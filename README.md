@@ -73,6 +73,30 @@ The public console loads a synthetic sample by default. A private operator can
 open a locally generated snapshot, inspect only the evidence that affected the
 answer, and copy a bounded status report.
 
+### Trajectory adapter
+
+The included adapter accepts the vault's compact `trajectory-run-v1` shape and
+turns declared lanes, run end states, and evidence summaries into the same
+diagnostic packet. The example is synthetic; it demonstrates the mapping
+without publishing vault paths or operational data.
+
+```bash
+npm run adapt:trajectory -- \
+  --input examples/trajectory-adapter-input.json \
+  --output snapshot.json
+```
+
+| Trajectory field | Diagnostic field |
+|---|---|
+| `task.lane` | scheduled lane |
+| `ended_at` | terminal observation time |
+| `result.state` | success, failed, or preserved-local outcome |
+| `result.summary` | evidence-backed claim and record content |
+| `summary.validUntil` | explicit aggregate freshness boundary |
+
+Unknown or partial end states map to `preserved_local`, which requires
+attention rather than being promoted to success. Real inputs remain local.
+
 Add the compiled stdio server to an MCP client:
 
 ```json
@@ -124,6 +148,12 @@ The canonical public fixtures are the Markdown documents in
 [`data/ingestion-receipts.json`](data/ingestion-receipts.json). Receipts use
 source-relative paths, byte counts, and content hashes rather than a wall-clock
 ingestion time, so the same source produces the same output.
+
+[`data/snapshot-metadata.json`](data/snapshot-metadata.json) declares the
+moment this pinned dataset describes. MCP calls without an explicit `asOf`
+evaluate at that declared time; callers can still override it, and datasets
+without a declaration fall back to wall-clock time. A monthly advisory opens
+an issue when the public sample ages past its stated threshold.
 
 `src/diagnostic-snapshot.ts` packages one scenario, its deterministic
 assessment, and only the evidence records that affected that assessment.
@@ -204,6 +234,7 @@ data/             generated records and ingestion receipts
 docs/             dependency-free local-first diagnostic
 evals/            deterministic evaluation cases
 fixtures/         canonical synthetic Markdown sources
+examples/         public-safe adapter inputs
 src/context.ts    schema, validation, and search
 src/diagnostic-snapshot.ts
 src/ingest.ts     Markdown ingestion and deterministic receipts
@@ -233,6 +264,7 @@ npm test
 npm run eval
 npm run eval:retrieval
 npm run ingest:check
+npm run fixture:check
 npm run demo:check
 ```
 

@@ -123,6 +123,28 @@
           </summary>
           <ol id="timeline" class="timeline"></ol>
         </details>
+
+        <section class="search-panel" aria-labelledby="search-title">
+          <div class="panel-head">
+            <div>
+              <p class="kicker">Bounded retrieval</p>
+              <h2 id="search-title">Search this evidence packet</h2>
+            </div>
+            <span id="search-count">BM25F · max 5</span>
+          </div>
+          <form id="search-form" class="search-form" role="search">
+            <label class="sr-only" for="search-query">Search evidence</label>
+            <input
+              id="search-query"
+              type="search"
+              value="refresh"
+              autocomplete="off"
+              placeholder="Try vendor, rollout, escalation…"
+            />
+            <button class="button secondary" type="submit">Search</button>
+          </form>
+          <div id="search-results" class="search-results" aria-live="polite"></div>
+        </section>
       </section>
 
       <section id="proof" class="proof" aria-labelledby="proof-title">
@@ -147,8 +169,12 @@
             <span>Rules run locally</span>
           </article>
           <article>
-            <strong>6 explicit evaluations</strong>
-            <span>Freshness and evidence gaps included</span>
+            <a
+              href="https://github.com/Kaagemusha/context-layer-lab/tree/main/evals"
+            >
+              <strong>15 explicit evaluations</strong>
+              <span>6 context + 9 retrieval cases</span>
+            </a>
           </article>
           <article>
             <strong>Fail-closed</strong>

@@ -14,13 +14,14 @@ export type ToolResponse<T> = {
   result: T;
 };
 
-function parseAsOf(value?: string): Date {
-  if (!value) {
+function parseAsOf(value?: string, fallback?: string): Date {
+  const candidate = value ?? fallback;
+  if (!candidate) {
     return new Date();
   }
-  const parsed = new Date(value);
+  const parsed = new Date(candidate);
   if (Number.isNaN(parsed.getTime())) {
-    throw new Error(`Invalid asOf timestamp: ${value}`);
+    throw new Error(`Invalid asOf timestamp: ${candidate}`);
   }
   return parsed;
 }
@@ -32,6 +33,7 @@ export function handleSearch(
     asOf?: string | undefined;
     limit?: number | undefined;
   },
+  snapshotAsOf?: string,
 ): ToolResponse<{ query: string; matches: SearchResult[]; limit: number }> {
   const requestedLimit = input.limit ?? DEFAULT_SEARCH_LIMIT;
   const effectiveLimit = Math.max(
@@ -41,7 +43,7 @@ export function handleSearch(
   const matches = searchContext(
     records,
     input.query,
-    parseAsOf(input.asOf),
+    parseAsOf(input.asOf, snapshotAsOf),
     effectiveLimit,
   );
   return {
@@ -60,8 +62,12 @@ export function handleExplainSource(
 
 export function handleValidate(
   input: { record: unknown; asOf?: string | undefined },
+  snapshotAsOf?: string,
 ): ToolResponse<ValidationResult> {
-  const result = validateRecord(input.record, parseAsOf(input.asOf));
+  const result = validateRecord(
+    input.record,
+    parseAsOf(input.asOf, snapshotAsOf),
+  );
   return { ok: result.valid, result };
 }
 

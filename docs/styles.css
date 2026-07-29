@@ -41,6 +41,16 @@ input {
   font: inherit;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
 button,
 a {
   -webkit-tap-highlight-color: transparent;
@@ -614,6 +624,80 @@ h1 {
   font-size: 0.75rem;
 }
 
+.search-panel {
+  padding: 26px 32px 30px;
+  border-top: 1px solid var(--line);
+  background: var(--panel-strong);
+}
+
+.search-form {
+  display: flex;
+  gap: 9px;
+}
+
+.search-form input {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 13px;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  color: var(--ink);
+  background: var(--panel);
+}
+
+.search-form input:focus {
+  outline: 2px solid var(--navy);
+  outline-offset: 2px;
+}
+
+.search-results {
+  margin-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.search-result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 76px;
+  gap: 14px;
+  align-items: center;
+  min-height: 68px;
+  border-bottom: 1px solid var(--line);
+}
+
+.search-result > div {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.search-result > div span,
+.empty-search {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.search-result > div span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-result .status-chip.valid {
+  color: var(--green);
+  background: var(--green-soft);
+}
+
+.search-result .status-chip.degraded,
+.search-result .status-chip.invalid {
+  color: #9b3a27;
+  background: var(--signal-soft);
+}
+
+.empty-search {
+  margin: 0;
+  padding: 18px 0 4px;
+}
+
 .proof {
   margin-top: 34px;
   padding: 38px 40px 28px;
@@ -655,6 +739,12 @@ h1 {
   display: grid;
   gap: 6px;
   padding: 20px 18px 20px 0;
+}
+
+.proof-metrics a {
+  display: grid;
+  gap: 6px;
+  text-decoration: none;
 }
 
 .proof-metrics article + article {
@@ -995,6 +1085,25 @@ summary:focus-visible {
   .timeline .row-action {
     grid-column: 3;
     grid-row: 2;
+  }
+
+  .search-panel {
+    padding: 24px 20px;
+  }
+
+  .search-form {
+    display: grid;
+    grid-template-columns: 1fr auto;
+  }
+
+  .search-result {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 13px 0;
+  }
+
+  .search-result .row-action {
+    grid-column: 1 / -1;
+    justify-self: start;
   }
 
   .proof {

@@ -41,12 +41,21 @@ export type ValidationIssueCode =
   | "stale_record"
   | "unsupported_claim";
 
-export type ValidationIssue = {
-  code: ValidationIssueCode;
-  severity: "error" | "warning";
-  message: string;
-  path?: string;
-};
+export const validationIssueSchema = z
+  .object({
+    code: z.enum([
+      "malformed_record",
+      "missing_provenance",
+      "stale_record",
+      "unsupported_claim",
+    ]),
+    severity: z.enum(["error", "warning"]),
+    message: z.string().min(1),
+    path: z.string().min(1).optional(),
+  })
+  .strict();
+
+export type ValidationIssue = z.infer<typeof validationIssueSchema>;
 
 export type ValidationResult = {
   valid: boolean;

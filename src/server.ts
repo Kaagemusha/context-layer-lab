@@ -19,7 +19,7 @@ function toolResult(value: unknown, isError = false) {
   };
 }
 
-const { records, receipts } = await loadContextSnapshot();
+const { records, receipts, snapshotAsOf } = await loadContextSnapshot();
 const server = new McpServer({
   name: "context-layer-lab",
   version: "0.1.0",
@@ -61,7 +61,8 @@ server.registerTool(
       idempotentHint: true,
     },
   },
-  async (input) => toolResult(handleSearch(records, input)),
+  async (input) =>
+    toolResult(handleSearch(records, input, snapshotAsOf)),
 );
 
 server.registerTool(
@@ -101,7 +102,7 @@ server.registerTool(
     },
   },
   async (input) => {
-    const response = handleValidate(input);
+    const response = handleValidate(input, snapshotAsOf);
     return toolResult(response, !response.ok);
   },
 );
