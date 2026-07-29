@@ -43,6 +43,27 @@ test("search handler returns a stable result envelope", () => {
   assert.equal(response.result.matches[0]?.id, "handoff");
 });
 
+test("search defaults to the dataset's declared snapshot time", () => {
+  const response = handleSearch(
+    [record],
+    { query: "incident" },
+    "2026-07-28T12:00:00Z",
+  );
+  assert.equal(response.result.matches[0]?.state, "valid");
+});
+
+test("an explicit asOf overrides the declared snapshot time", () => {
+  const response = handleSearch(
+    [record],
+    {
+      query: "incident",
+      asOf: "2026-09-01T12:00:00Z",
+    },
+    "2026-07-28T12:00:00Z",
+  );
+  assert.equal(response.result.matches[0]?.state, "degraded");
+});
+
 test("explain handler marks missing evidence as unsuccessful", () => {
   const response = handleExplainSource([record], {
     recordId: "handoff",

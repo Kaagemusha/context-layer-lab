@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import {
   contextRecordSchema,
+  validationIssueSchema,
   validateRecord,
   type ContextRecord,
   type ValidationIssue,
@@ -44,28 +45,42 @@ export const operationalScenarioSchema = z
 
 export type OperationalScenario = z.infer<typeof operationalScenarioSchema>;
 
-export type LaneAssessment = {
-  id: string;
-  label: string;
-  state: "healthy" | "attention" | "missing" | "not_due";
-  outcome: "success" | "failed" | "preserved_local" | null;
-  evidenceRecordId: string | null;
-};
+export const laneAssessmentSchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    state: z.enum(["healthy", "attention", "missing", "not_due"]),
+    outcome: z.enum(["success", "failed", "preserved_local"]).nullable(),
+    evidenceRecordId: z.string().min(1).nullable(),
+  })
+  .strict();
 
-export type OperationalAssessment = {
-  question: string;
-  asOf: string;
-  naiveVerdict: "healthy" | "attention";
-  governedVerdict: "healthy" | "attention";
-  summaryStale: boolean;
-  decisionPrevented: boolean;
-  newerEvidenceRecordIds: string[];
-  laneAssessments: LaneAssessment[];
-  evidenceQuality: Record<
-    string,
-    { state: "valid" | "degraded" | "invalid"; issues: ValidationIssue[] }
-  >;
-};
+export const operationalAssessmentSchema = z
+  .object({
+    question: z.string().min(1),
+    asOf: z.string().datetime({ offset: true }),
+    naiveVerdict: z.enum(["healthy", "attention"]),
+    governedVerdict: z.enum(["healthy", "attention"]),
+    summaryStale: z.boolean(),
+    decisionPrevented: z.boolean(),
+    newerEvidenceRecordIds: z.array(z.string().min(1)),
+    laneAssessments: z.array(laneAssessmentSchema),
+    evidenceQuality: z.record(
+      z.string().min(1),
+      z
+        .object({
+          state: z.enum(["valid", "degraded", "invalid"]),
+          issues: z.array(validationIssueSchema),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
+
+export type LaneAssessment = z.infer<typeof laneAssessmentSchema>;
+export type OperationalAssessment = z.infer<
+  typeof operationalAssessmentSchema
+>;
 
 export function assessOperationalHealth(
   input: unknown,
