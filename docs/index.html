@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Inspect synthetic AI context records, provenance, and freshness."
+      content="See how evidence-aware context prevents an AI agent from trusting a stale operational dashboard."
     />
     <title>Context Layer Lab</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
@@ -14,15 +14,79 @@
   <body>
     <main>
       <header class="masthead">
-        <p class="eyebrow">Context Layer Lab / public-safe fixture</p>
-        <h1>Trust starts before retrieval.</h1>
+        <p class="eyebrow">Context Layer Lab / operational replay</p>
+        <h1>The dashboard said green.</h1>
         <p class="lede">
-          Inspect the ownership, freshness, claims, source trail, and ingestion
-          receipt that an AI system should receive with organizational context.
+          Newer receipts showed two failures. This public-safe replay demonstrates
+          how an AI system can reject a stale summary before it gives the wrong
+          operational answer.
         </p>
+        <div class="proof-strip" aria-label="Demonstration properties">
+          <span>Deterministic</span>
+          <span>No model call</span>
+          <span>Every conclusion traceable</span>
+        </div>
       </header>
 
-      <section class="toolbar" aria-label="Record controls">
+      <section class="decision-demo" aria-labelledby="question">
+        <div class="question-row">
+          <div>
+            <p class="eyebrow">The operational question</p>
+            <h2 id="question">Are all scheduled automations healthy?</h2>
+          </div>
+          <p class="as-of">Evidence as of <time id="as-of"></time></p>
+        </div>
+
+        <div class="answer-grid">
+          <article class="answer naive">
+            <p class="answer-label">Summary-only answer</p>
+            <p class="answer-verdict">Yes.</p>
+            <p>The latest dashboard is GREEN.</p>
+            <p class="answer-flag">Wrong because the summary expired before newer runs completed.</p>
+          </article>
+          <article class="answer governed">
+            <p class="answer-label">Evidence-aware answer</p>
+            <p class="answer-verdict">No.</p>
+            <p><strong id="attention-count">Two lanes</strong> need attention.</p>
+            <p class="answer-flag">Newer terminal receipts override the stale rollup.</p>
+          </article>
+        </div>
+
+        <div class="prevented">
+          <span class="prevented-mark" aria-hidden="true">×</span>
+          <div>
+            <p class="eyebrow">Decision prevented</p>
+            <p>An operator does not walk away believing a failed refresh and stranded research run are healthy.</p>
+          </div>
+        </div>
+
+        <div class="lane-heading">
+          <div>
+            <p class="eyebrow">Reconciled lane state</p>
+            <h3>What the receipts actually establish</h3>
+          </div>
+          <p>Not due is not failure. Preserved locally is not integrated.</p>
+        </div>
+        <div id="lanes" class="lanes"></div>
+      </section>
+
+      <section class="method" aria-labelledby="method-heading">
+        <p class="eyebrow">The context layer</p>
+        <h2 id="method-heading">A small layer with a consequential job.</h2>
+        <div class="method-grid">
+          <article><span>01</span><h3>Carry state</h3><p>Ownership, freshness, source identity, and terminal outcome travel with each record.</p></article>
+          <article><span>02</span><h3>Reconcile time</h3><p>Later, more specific receipts supersede an earlier aggregate without deleting history.</p></article>
+          <article><span>03</span><h3>Fail visibly</h3><p>Missing or unsupported evidence becomes part of the answer instead of disappearing.</p></article>
+        </div>
+      </section>
+
+      <section class="inspector-heading" aria-labelledby="inspector-title">
+        <p class="eyebrow">Inspect the proof</p>
+        <h2 id="inspector-title">Every answer opens into evidence.</h2>
+        <p>These synthetic records use the same schema, provenance checks, freshness rules, and deterministic ingestion receipts exposed through the MCP server.</p>
+      </section>
+
+      <section class="toolbar" aria-label="Evidence record controls">
         <label for="search">Search context</label>
         <div class="search-row">
           <input
@@ -39,8 +103,8 @@
 
       <footer>
         <p>
-          Synthetic data. No model call. No hidden score. Quality flags remain
-          attached to the context they describe.
+          Synthetic data modeled on a real class of agent failure. No private
+          vault structure, operating logs, or personal information.
         </p>
         <a href="https://github.com/Kaagemusha/context-layer-lab"
           >Source and evaluations</a

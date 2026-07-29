@@ -31,8 +31,8 @@
     "eval": "npm run build --silent && node dist/src/eval-runner.js",
     "ingest": "npm run build --silent && node dist/src/ingest-runner.js",
     "ingest:check": "npm run build --silent && node dist/src/ingest-runner.js --check",
-    "demo:sync": "node scripts/sync-demo.mjs",
-    "demo:check": "node scripts/sync-demo.mjs --check",
+    "demo:sync": "npm run build --silent && node scripts/sync-demo.mjs",
+    "demo:check": "npm run build --silent && node scripts/sync-demo.mjs --check",
     "check": "npm run typecheck && npm test && npm run eval && npm run ingest:check && npm run demo:check",
     "start": "node dist/src/server.js"
   },

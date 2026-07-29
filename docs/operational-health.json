@@ -1,0 +1,121 @@
+{
+  "scenario": {
+    "question": "Are all scheduled automations healthy?",
+    "asOf": "2026-07-28T09:10:00Z",
+    "lanes": [
+      {
+        "id": "morning-brief",
+        "label": "Morning Brief",
+        "dueAt": "2026-07-28T07:55:00Z"
+      },
+      {
+        "id": "site-refresh",
+        "label": "Site Refresh",
+        "dueAt": "2026-07-28T08:15:00Z"
+      },
+      {
+        "id": "research-watch",
+        "label": "Research Watch",
+        "dueAt": "2026-07-28T08:30:00Z"
+      },
+      {
+        "id": "ai-radar",
+        "label": "AI Radar",
+        "dueAt": "2026-07-28T17:30:00Z"
+      }
+    ],
+    "summary": {
+      "recordId": "fleet-health-rollup",
+      "observedAt": "2026-07-28T07:30:00Z",
+      "verdict": "healthy"
+    },
+    "receipts": [
+      {
+        "recordId": "morning-brief-receipt",
+        "laneId": "morning-brief",
+        "observedAt": "2026-07-28T08:02:00Z",
+        "outcome": "success"
+      },
+      {
+        "recordId": "site-refresh-receipt",
+        "laneId": "site-refresh",
+        "observedAt": "2026-07-28T08:40:00Z",
+        "outcome": "failed"
+      },
+      {
+        "recordId": "research-watch-receipt",
+        "laneId": "research-watch",
+        "observedAt": "2026-07-28T09:05:00Z",
+        "outcome": "preserved_local"
+      }
+    ]
+  },
+  "assessment": {
+    "question": "Are all scheduled automations healthy?",
+    "asOf": "2026-07-28T09:10:00Z",
+    "naiveVerdict": "healthy",
+    "governedVerdict": "attention",
+    "summaryStale": true,
+    "decisionPrevented": true,
+    "newerEvidenceRecordIds": [
+      "morning-brief-receipt",
+      "site-refresh-receipt",
+      "research-watch-receipt"
+    ],
+    "laneAssessments": [
+      {
+        "id": "morning-brief",
+        "label": "Morning Brief",
+        "state": "healthy",
+        "outcome": "success",
+        "evidenceRecordId": "morning-brief-receipt"
+      },
+      {
+        "id": "site-refresh",
+        "label": "Site Refresh",
+        "state": "attention",
+        "outcome": "failed",
+        "evidenceRecordId": "site-refresh-receipt"
+      },
+      {
+        "id": "research-watch",
+        "label": "Research Watch",
+        "state": "attention",
+        "outcome": "preserved_local",
+        "evidenceRecordId": "research-watch-receipt"
+      },
+      {
+        "id": "ai-radar",
+        "label": "AI Radar",
+        "state": "not_due",
+        "outcome": null,
+        "evidenceRecordId": null
+      }
+    ],
+    "evidenceQuality": {
+      "fleet-health-rollup": {
+        "state": "degraded",
+        "issues": [
+          {
+            "code": "stale_record",
+            "severity": "warning",
+            "message": "The record expired at 2026-07-28T07:55:00Z.",
+            "path": "validUntil"
+          }
+        ]
+      },
+      "morning-brief-receipt": {
+        "state": "valid",
+        "issues": []
+      },
+      "site-refresh-receipt": {
+        "state": "valid",
+        "issues": []
+      },
+      "research-watch-receipt": {
+        "state": "valid",
+        "issues": []
+      }
+    }
+  }
+}

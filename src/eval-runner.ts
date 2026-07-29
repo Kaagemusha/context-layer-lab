@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 
 import { validateRecord, type ValidationIssueCode } from "./context.js";
+import { assessOperationalHealth } from "./operational-health.js";
 
 type EvaluationCase = {
   name: string;
@@ -26,7 +27,44 @@ for (const evaluation of cases) {
   }
 }
 
-console.log(`\n${cases.length - failures}/${cases.length} evaluations passed`);
+const operationalFixture = JSON.parse(
+  await readFile(
+    new URL("../../evals/operational-health.json", import.meta.url),
+    "utf8",
+  ),
+);
+const records = JSON.parse(
+  await readFile(
+    new URL("../../data/context-records.json", import.meta.url),
+    "utf8",
+  ),
+);
+const operational = assessOperationalHealth(
+  operationalFixture.scenario,
+  records,
+);
+const operationalObserved = {
+  naiveVerdict: operational.naiveVerdict,
+  governedVerdict: operational.governedVerdict,
+  summaryStale: operational.summaryStale,
+  decisionPrevented: operational.decisionPrevented,
+  attentionLaneIds: operational.laneAssessments
+    .filter((lane) => lane.state === "attention")
+    .map((lane) => lane.id),
+  notDueLaneIds: operational.laneAssessments
+    .filter((lane) => lane.state === "not_due")
+    .map((lane) => lane.id),
+};
+const operationalPassed =
+  JSON.stringify(operationalObserved) ===
+  JSON.stringify(operationalFixture.expected);
+console.log(
+  `${operationalPassed ? "PASS" : "FAIL"} stale dashboard contradicted by newer receipts: naive=${operational.naiveVerdict} governed=${operational.governedVerdict}`,
+);
+if (!operationalPassed) failures += 1;
+
+const total = cases.length + 1;
+console.log(`\n${total - failures}/${total} evaluations passed`);
 if (failures > 0) {
   process.exitCode = 1;
 }

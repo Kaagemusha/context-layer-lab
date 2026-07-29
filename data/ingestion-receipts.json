@@ -1,5 +1,45 @@
 [
   {
+    "recordId": "fleet-health-rollup",
+    "documentPath": "fixtures/source-docs/00-fleet-health-rollup.md",
+    "contentSha256": "061c25e85e9f42554458198c5b69d0978663dd9827a8ceacdcea59d8a82557c4",
+    "byteLength": 807,
+    "declaredSourceIds": [
+      "dashboard-snapshot-0730"
+    ],
+    "recordUpdatedAt": "2026-07-28T07:30:00Z"
+  },
+  {
+    "recordId": "morning-brief-receipt",
+    "documentPath": "fixtures/source-docs/00-morning-brief-receipt.md",
+    "contentSha256": "756476f17b1b520d44fc153d1ab85f68d09589056f5b358a2d6b60c7af1070b1",
+    "byteLength": 809,
+    "declaredSourceIds": [
+      "morning-run-0802"
+    ],
+    "recordUpdatedAt": "2026-07-28T08:02:00Z"
+  },
+  {
+    "recordId": "research-watch-receipt",
+    "documentPath": "fixtures/source-docs/00-research-watch-receipt.md",
+    "contentSha256": "d7c659913319ce14319841f71550a265d4773db34fb10c94d78666f9babe2385",
+    "byteLength": 897,
+    "declaredSourceIds": [
+      "research-run-0905"
+    ],
+    "recordUpdatedAt": "2026-07-28T09:05:00Z"
+  },
+  {
+    "recordId": "site-refresh-receipt",
+    "documentPath": "fixtures/source-docs/00-site-refresh-receipt.md",
+    "contentSha256": "c10bdd07a9d873a50413351cbac791ee573136a745a0c2ec1671e5ad3d6d6008",
+    "byteLength": 824,
+    "declaredSourceIds": [
+      "site-run-0840"
+    ],
+    "recordUpdatedAt": "2026-07-28T08:40:00Z"
+  },
+  {
     "recordId": "launch-readiness",
     "documentPath": "fixtures/source-docs/01-northstar-launch.md",
     "contentSha256": "9d32c6025c3c4a93b8c62b931cc2bdfa3edc6e2ab5d4c44821cd4b432bcadbdb",

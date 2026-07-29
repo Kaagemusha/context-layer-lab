@@ -1,5 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 
+import { assessOperationalHealth } from "../dist/src/operational-health.js";
+
 const files = [
   ["data/context-records.json", "docs/records.json"],
   ["data/ingestion-receipts.json", "docs/receipts.json"],
@@ -10,6 +12,26 @@ const copies = await Promise.all(
     expected: await readFile(new URL(`../${source}`, import.meta.url), "utf8"),
   })),
 );
+const operationalFixture = JSON.parse(
+  await readFile(
+    new URL("../evals/operational-health.json", import.meta.url),
+    "utf8",
+  ),
+);
+const records = JSON.parse(
+  await readFile(new URL("../data/context-records.json", import.meta.url), "utf8"),
+);
+copies.push({
+  destination: "docs/operational-health.json",
+  expected: `${JSON.stringify(
+    {
+      scenario: operationalFixture.scenario,
+      assessment: assessOperationalHealth(operationalFixture.scenario, records),
+    },
+    null,
+    2,
+  )}\n`,
+});
 
 if (process.argv.includes("--check")) {
   let stale = false;
