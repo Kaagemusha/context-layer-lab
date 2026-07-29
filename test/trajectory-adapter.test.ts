@@ -59,3 +59,29 @@ test("rejects duplicate run IDs", () => {
     /unique run IDs/,
   );
 });
+
+test("rejects a run ID reserved for the summary record", () => {
+  assert.throws(
+    () =>
+      adaptTrajectoryRuns({
+        ...input,
+        runs: [{ ...input.runs[0], run_id: "trajectory-summary" }],
+      }),
+    /run ID "trajectory-summary" is reserved/,
+  );
+});
+
+test("appends run IDs to source base URLs without a trailing slash", () => {
+  const snapshot = adaptTrajectoryRuns({
+    ...input,
+    sourceBaseUrl: "https://example.invalid/trajectory/runs",
+  });
+  const run = snapshot.records.find(
+    (record) => record.id === input.runs[0].run_id,
+  );
+
+  assert.equal(
+    run?.sources[0]?.url,
+    `https://example.invalid/trajectory/runs/${input.runs[0].run_id}`,
+  );
+});
