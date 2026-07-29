@@ -39,6 +39,26 @@ test("an MCP client can discover and call the stdio server", async () => {
     assert.equal(response.isError, false);
     assert.match(JSON.stringify(response.content), /launch-readiness/);
 
+    const currentReceipt = await client.callTool({
+      name: "search_context",
+      arguments: { query: "refresh" },
+    });
+    assert.equal(currentReceipt.isError, false);
+    assert.match(
+      JSON.stringify(currentReceipt.content),
+      /site-refresh-receipt[\s\S]*\\"state\\": \\"valid\\"/,
+    );
+
+    const staleHistory = await client.callTool({
+      name: "search_context",
+      arguments: { query: "vendor" },
+    });
+    assert.equal(staleHistory.isError, false);
+    assert.match(
+      JSON.stringify(staleHistory.content),
+      /legacy-vendor-review[\s\S]*\\"state\\": \\"degraded\\"/,
+    );
+
     const receipt = await client.callTool({
       name: "inspect_ingestion",
       arguments: { recordId: "launch-readiness" },

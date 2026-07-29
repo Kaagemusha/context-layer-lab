@@ -20,6 +20,7 @@
     "dist/src",
     "data",
     "evals",
+    "examples",
     "fixtures",
     "README.md",
     "LICENSE"
@@ -28,12 +29,19 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "test": "npm run build --silent && node --test dist/test/*.test.js",
-    "eval": "npm run build --silent && node dist/src/eval-runner.js",
+    "eval": "npm run build --silent && node dist/src/eval-runner.js && node dist/src/retrieval-eval-runner.js",
+    "eval:retrieval": "npm run build --silent && node dist/src/retrieval-eval-runner.js",
     "ingest": "npm run build --silent && node dist/src/ingest-runner.js",
     "ingest:check": "npm run build --silent && node dist/src/ingest-runner.js --check",
-    "demo:sync": "npm run build --silent && node scripts/sync-demo.mjs",
-    "demo:check": "npm run build --silent && node scripts/sync-demo.mjs --check",
-    "check": "npm run typecheck && npm test && npm run eval && npm run ingest:check && npm run demo:check",
+    "fixture:check": "npm run build --silent && node dist/src/fixture-check-runner.js",
+    "snapshot:age": "node scripts/check-snapshot-age.mjs",
+    "diagnose": "npm run build --silent && node dist/src/diagnose-runner.js",
+    "adapt:trajectory": "npm run build --silent && node dist/src/adapt-trajectory-runner.js",
+    "browser:sync": "node scripts/build-browser-runtime.mjs",
+    "browser:check": "node scripts/build-browser-runtime.mjs --check",
+    "demo:sync": "npm run build --silent && npm run browser:sync --silent && node scripts/sync-demo.mjs",
+    "demo:check": "npm run build --silent && npm run browser:check --silent && node scripts/sync-demo.mjs --check",
+    "check": "npm run typecheck && npm test && npm run eval && npm run ingest:check && npm run fixture:check && npm run demo:check",
     "start": "node dist/src/server.js"
   },
   "dependencies": {
@@ -42,6 +50,7 @@
   },
   "devDependencies": {
     "@types/node": "24.10.1",
+    "esbuild": "^0.25.8",
     "typescript": "5.9.3"
   }
 }

@@ -19,7 +19,7 @@ function toolResult(value: unknown, isError = false) {
   };
 }
 
-const { records, receipts } = await loadContextSnapshot();
+const { records, receipts, snapshotAsOf } = await loadContextSnapshot();
 const server = new McpServer({
   name: "context-layer-lab",
   version: "0.1.0",
@@ -49,10 +49,11 @@ server.registerTool(
   "search_context",
   {
     description:
-      "Search synthetic organizational context. Returns source IDs and visible freshness or evidence issues with every match.",
+      "Search synthetic organizational context. Returns a bounded, ranked set with source IDs and visible freshness or evidence issues on every match.",
     inputSchema: {
       query: z.string().min(1),
       asOf: z.string().datetime({ offset: true }).optional(),
+      limit: z.number().int().min(1).max(20).optional(),
     },
     annotations: {
       readOnlyHint: true,
@@ -60,7 +61,8 @@ server.registerTool(
       idempotentHint: true,
     },
   },
-  async (input) => toolResult(handleSearch(records, input)),
+  async (input) =>
+    toolResult(handleSearch(records, input, snapshotAsOf)),
 );
 
 server.registerTool(
@@ -100,7 +102,7 @@ server.registerTool(
     },
   },
   async (input) => {
-    const response = handleValidate(input);
+    const response = handleValidate(input, snapshotAsOf);
     return toolResult(response, !response.ok);
   },
 );
