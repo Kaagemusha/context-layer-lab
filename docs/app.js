@@ -1,5 +1,7 @@
 import {
+  assessmentsConflict,
   searchContext,
+  selectedEvidenceRecordIds,
   verifyDiagnosticSnapshot,
 } from "./runtime.js";
 
@@ -228,9 +230,8 @@ function renderRules() {
     (lane) => lane.state !== "not_due",
   );
   const missing = dueLanes.filter((lane) => lane.state === "missing");
-  const degraded = Object.entries(assessment.evidenceQuality).filter(
-    ([id, quality]) =>
-      id !== snapshot.scenario.summary.recordId && quality.state !== "valid",
+  const degraded = selectedEvidenceRecordIds(assessment).filter(
+    (id) => assessment.evidenceQuality[id]?.state !== "valid",
   );
 
   elements.rules.innerHTML = [
@@ -284,12 +285,11 @@ function render() {
   elements.summaryTime.textContent = formatTime(scenario.summary.observedAt);
   elements.currentVerdict.textContent = titleCase(assessment.governedVerdict);
   elements.currentTime.textContent = formatTime(assessment.asOf);
-  elements.conflictCard.classList.toggle("resolved", !assessment.decisionPrevented);
-  elements.conflictState.textContent = assessment.decisionPrevented
-    ? "Detected"
-    : "None";
-  elements.conflictExplanation.textContent = assessment.decisionPrevented
-    ? `${assessment.newerEvidenceRecordIds.length} newer evidence records prevent the earlier healthy summary from becoming the current answer.`
+  const hasConflict = assessmentsConflict(assessment);
+  elements.conflictCard.classList.toggle("resolved", !hasConflict);
+  elements.conflictState.textContent = hasConflict ? "Detected" : "None";
+  elements.conflictExplanation.textContent = hasConflict
+    ? `The evidence-backed verdict changes the earlier ${assessment.naiveVerdict} aggregate to ${assessment.governedVerdict}.`
     : "The current evidence does not contradict the earlier aggregate.";
 
   elements.laneCount.textContent = `${assessment.laneAssessments.length} lanes`;

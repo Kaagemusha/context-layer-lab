@@ -227,6 +227,23 @@ This keeps ingestion deterministic and the dependency surface small.
 structure, credentials, or operating logs are included. The organizations and
 URLs are fictional.
 
+## What This Lab Caught in Itself
+
+The lab has failed on the same boundaries it is designed to make visible:
+
+- Its pinned fixture story originally drifted with wall-clock time. Snapshot
+  metadata now declares the fixture time, CI checks coherence at that declared
+  time, and a monthly advisory reports real-world aging without making a
+  permanent red build inevitable.
+- Its first browser console trusted the assessment included in an imported
+  snapshot. It now validates the shared strict schemas, recomputes the
+  assessment from the scenario and evidence records, and rejects any mismatch.
+
+The time precedence is explicit input, then declared snapshot time, then wall
+clock. Regression tests preserve both corrections. The point is not that the
+lab avoided mistakes; it is that each discovered failure became a testable
+constraint.
+
 ## Repository Map
 
 ```text
