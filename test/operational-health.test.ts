@@ -2,7 +2,11 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-import { assessOperationalHealth } from "../src/operational-health.js";
+import {
+  assessOperationalHealth,
+  assessmentsConflict,
+  selectedEvidenceRecordIds,
+} from "../src/operational-health.js";
 
 const scenario = JSON.parse(
   await readFile(
@@ -93,5 +97,50 @@ test("unknown receipt lanes fail closed", () => {
         records,
       ),
     /Receipt references unknown lane "unknown-lane"/,
+  );
+});
+
+test("detects a conflict when newer evidence clears earlier attention", () => {
+  const result = assessOperationalHealth(
+    {
+      ...scenario.scenario,
+      summary: { ...scenario.scenario.summary, verdict: "attention" },
+      receipts: scenario.scenario.receipts.map(
+        (receipt: { outcome: string }) => ({ ...receipt, outcome: "success" }),
+      ),
+    },
+    records,
+  );
+
+  assert.equal(result.naiveVerdict, "attention");
+  assert.equal(result.governedVerdict, "healthy");
+  assert.equal(assessmentsConflict(result), true);
+});
+
+test("selects only evidence records used by lane assessments", () => {
+  const result = assessOperationalHealth(
+    {
+      ...scenario.scenario,
+      receipts: [
+        {
+          recordId: "legacy-vendor-review",
+          laneId: "site-refresh",
+          observedAt: "2026-07-28T07:40:00Z",
+          outcome: "success",
+        },
+        ...scenario.scenario.receipts,
+      ],
+    },
+    records,
+  );
+
+  assert.equal(result.evidenceQuality["legacy-vendor-review"]?.state, "degraded");
+  assert.equal(
+    selectedEvidenceRecordIds(result).includes("legacy-vendor-review"),
+    false,
+  );
+  assert.equal(
+    selectedEvidenceRecordIds(result).includes("site-refresh-receipt"),
+    true,
   );
 });

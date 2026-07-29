@@ -62,6 +62,8 @@ export type TrajectoryAdapterInput = z.infer<
   typeof trajectoryAdapterInputSchema
 >;
 
+const SUMMARY_RECORD_ID = "trajectory-summary";
+
 function addHours(timestamp: string, hours: number): string {
   return new Date(
     new Date(timestamp).getTime() + hours * 60 * 60 * 1000,
@@ -91,6 +93,11 @@ export function adaptTrajectoryRuns(input: unknown): DiagnosticSnapshot {
   if (runIds.size !== packet.runs.length) {
     throw new Error("Trajectory adapter runs must have unique run IDs.");
   }
+  if (runIds.has(SUMMARY_RECORD_ID)) {
+    throw new Error(
+      `Trajectory adapter run ID "${SUMMARY_RECORD_ID}" is reserved.`,
+    );
+  }
 
   for (const run of packet.runs) {
     if (!laneIds.has(run.task.lane)) {
@@ -101,7 +108,7 @@ export function adaptTrajectoryRuns(input: unknown): DiagnosticSnapshot {
   }
 
   const summaryRecord: ContextRecord = {
-    id: "trajectory-summary",
+    id: SUMMARY_RECORD_ID,
     title: "Trajectory Fleet Summary",
     summary: packet.summary.text,
     content: packet.summary.text,
@@ -125,6 +132,11 @@ export function adaptTrajectoryRuns(input: unknown): DiagnosticSnapshot {
     ],
   };
 
+  const sourceBaseUrl = new URL(packet.sourceBaseUrl);
+  if (!sourceBaseUrl.pathname.endsWith("/")) {
+    sourceBaseUrl.pathname += "/";
+  }
+
   const runRecords: ContextRecord[] = packet.runs.map((run) => {
     const sourceId = `trajectory-${run.run_id}`;
     return {
@@ -142,7 +154,7 @@ export function adaptTrajectoryRuns(input: unknown): DiagnosticSnapshot {
           label: `Trajectory record ${run.run_id}`,
           url: new URL(
             encodeURIComponent(run.run_id),
-            packet.sourceBaseUrl,
+            sourceBaseUrl,
           ).toString(),
           observedAt: run.ended_at,
         },
