@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { verifyDiagnosticSnapshot } from "../src/diagnostic-snapshot.js";
 import { adaptReliabilityRollup } from "../src/reliability-adapter.js";
 
 const generatedAt = "2026-07-29T20:00:00.000Z";
@@ -27,6 +28,7 @@ const baseRollup = {
       loop_id: "whitemore",
       iso_timestamp: "2026-07-29T01:05:56.000Z",
       host: "host-a",
+      outcome: "no-change",
       fresh: true,
     },
   ],
@@ -57,12 +59,100 @@ test("maps a green vault rollup to healthy governed evidence", () => {
     [
       ["host-patrol", "success", "healthy"],
       [
-        "heartbeat-personal-website-midnight-refresh",
+        "heartbeat-personal-website-midnight-refresh-host-a",
         "success",
         "healthy",
       ],
-      ["heartbeat-whitemore", "success", "healthy"],
+      ["heartbeat-whitemore-host-a", "success", "healthy"],
     ],
+  );
+});
+
+test("missing heartbeat outcomes fail closed", () => {
+  const snapshot = adaptReliabilityRollup(
+    {
+      ...baseRollup,
+      heartbeats: [{ ...baseRollup.heartbeats[1], outcome: undefined }],
+    },
+    "https://example.invalid/vault/",
+  );
+
+  assert.equal(snapshot.assessment.governedVerdict, "attention");
+  assert.equal(
+    snapshot.assessment.laneAssessments[1]?.outcome,
+    "preserved_local",
+  );
+  assert.match(snapshot.records[2]?.content ?? "", /without a reported outcome/);
+});
+
+test("host identity disambiguates the same loop across hosts", () => {
+  const snapshot = adaptReliabilityRollup(
+    {
+      ...baseRollup,
+      heartbeats: [
+        baseRollup.heartbeats[0],
+        { ...baseRollup.heartbeats[0], host: "host-b" },
+      ],
+    },
+    "https://example.invalid/vault/",
+  );
+
+  assert.doesNotThrow(() => verifyDiagnosticSnapshot(snapshot));
+  assert.deepEqual(
+    snapshot.scenario.lanes.slice(1).map((lane) => lane.id),
+    [
+      "heartbeat-personal-website-midnight-refresh-host-a",
+      "heartbeat-personal-website-midnight-refresh-host-b",
+    ],
+  );
+});
+
+test("missing patrol counts fail closed without claiming zero findings", () => {
+  const snapshot = adaptReliabilityRollup(
+    {
+      ...baseRollup,
+      patrol: { ...baseRollup.patrol, actionable: null },
+    },
+    "https://example.invalid/vault/",
+  );
+
+  assert.equal(snapshot.assessment.laneAssessments[0]?.outcome, "preserved_local");
+  assert.match(
+    snapshot.records[1]?.content ?? "",
+    /does not report an actionable count/,
+  );
+});
+
+test("stale patrol evidence says that it is stale", () => {
+  const snapshot = adaptReliabilityRollup(
+    {
+      ...baseRollup,
+      patrol: { ...baseRollup.patrol, fresh: false },
+    },
+    "https://example.invalid/vault/",
+  );
+
+  assert.equal(snapshot.assessment.laneAssessments[0]?.outcome, "preserved_local");
+  assert.match(snapshot.records[1]?.content ?? "", /is stale/);
+});
+
+test("source paths reject traversal segments", () => {
+  assert.throws(
+    () =>
+      adaptReliabilityRollup(
+        {
+          ...baseRollup,
+          status: "ATTENTION",
+          status_reliability_issues: [
+            {
+              file: "../private.md",
+              title: "Traversal attempt",
+            },
+          ],
+        },
+        "https://example.invalid/vault/",
+      ),
+    /traversal-free/,
   );
 });
 

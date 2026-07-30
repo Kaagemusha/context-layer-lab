@@ -44,7 +44,21 @@ export const reliabilityRollupSchema = z
     heartbeats: z.array(heartbeatSchema),
     status_reliability_issues: z.array(issueSchema),
   })
-  .passthrough();
+  .passthrough()
+  .superRefine((rollup, context) => {
+    const heartbeatKeys = new Set<string>();
+    rollup.heartbeats.forEach((heartbeat, index) => {
+      const key = `${heartbeat.host}\0${heartbeat.loop_id}`;
+      if (heartbeatKeys.has(key)) {
+        context.addIssue({
+          code: "custom",
+          message: "Heartbeat host and loop ID pairs must be unique.",
+          path: ["heartbeats", index, "loop_id"],
+        });
+      }
+      heartbeatKeys.add(key);
+    });
+  });
 
 export type ReliabilityRollup = z.infer<typeof reliabilityRollupSchema>;
 
@@ -80,9 +94,20 @@ function directoryUrl(input: string): URL {
 }
 
 function sourceUrl(base: URL, path: string): string {
+  const segments = path.split("/");
+  if (
+    segments.some(
+      (segment) =>
+        segment.length === 0 ||
+        segment === "." ||
+        segment === ".." ||
+        segment.includes("\\"),
+    )
+  ) {
+    throw new Error(`Source path must be relative and traversal-free: ${path}`);
+  }
   return new URL(
-    path
-      .split("/")
+    segments
       .map((segment) => encodeURIComponent(segment))
       .join("/"),
     base,
@@ -97,7 +122,7 @@ function heartbeatOutcome(
   heartbeat: ReliabilityRollup["heartbeats"][number],
 ): "success" | "failed" | "preserved_local" {
   if (!heartbeat.fresh) return "preserved_local";
-  if (!heartbeat.outcome) return "success";
+  if (!heartbeat.outcome) return "preserved_local";
 
   const normalized = heartbeat.outcome.toLowerCase();
   if (FAILED_OUTCOMES.has(normalized)) return "failed";
@@ -165,19 +190,21 @@ export function adaptReliabilityRollup(
   if (rollup.patrol) {
     const observedAt = rollup.patrol.timestamp ?? rollup.generated_at;
     const recordId = "reliability-patrol";
-    const actionable = rollup.patrol.actionable ?? 0;
+    const actionable = rollup.patrol.actionable;
     const outcome =
       rollup.patrol.state === "PARSED" &&
       rollup.patrol.fresh &&
       actionable === 0
         ? "success"
-        : actionable > 0
+        : typeof actionable === "number" && actionable > 0
           ? "failed"
           : "preserved_local";
     const text =
       outcome === "success"
         ? `The latest host patrol is fresh and reports ${actionable} actionable findings.`
-        : `The latest host patrol is ${rollup.patrol.state.toLowerCase()} with ${actionable} actionable findings.`;
+        : typeof actionable !== "number"
+          ? `The latest host patrol is ${rollup.patrol.fresh ? "fresh" : "stale"}, has state ${rollup.patrol.state.toLowerCase()}, and does not report an actionable count.`
+          : `The latest host patrol is ${rollup.patrol.fresh ? "fresh" : "stale"}, has state ${rollup.patrol.state.toLowerCase()}, and reports ${actionable} actionable findings.`;
     lanes.push({
       id: "host-patrol",
       label: "Host liveness patrol",
@@ -204,12 +231,12 @@ export function adaptReliabilityRollup(
   }
 
   for (const heartbeat of rollup.heartbeats) {
-    const laneId = `heartbeat-${safeId(heartbeat.loop_id)}`;
+    const laneId = `heartbeat-${safeId(heartbeat.loop_id)}-${safeId(heartbeat.host)}`;
     const recordId = `reliability-${laneId}`;
     const outcome = heartbeatOutcome(heartbeat);
     const outcomeText = heartbeat.outcome
       ? ` with outcome ${heartbeat.outcome}`
-      : "";
+      : " without a reported outcome";
     const text = `${heartbeat.loop_id} was observed at ${heartbeat.iso_timestamp} on ${heartbeat.host}${outcomeText}.`;
     lanes.push({
       id: laneId,
