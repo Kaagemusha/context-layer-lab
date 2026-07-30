@@ -348,7 +348,7 @@ function reportText() {
 async function copyReport() {
   try {
     await navigator.clipboard.writeText(reportText());
-    elements.copy.textContent = "Copied";
+    elements.copy.textContent = "Copied — plain-text handoff";
   } catch {
     elements.copy.textContent = "Copy unavailable";
   }

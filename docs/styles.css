@@ -346,6 +346,7 @@ h1 {
 .comparison > div {
   display: grid;
   gap: 5px;
+  min-width: 0;
 }
 
 .comparison span,
@@ -721,6 +722,16 @@ h1 {
   line-height: 1;
 }
 
+.proof-search-link {
+  justify-self: end;
+  margin-bottom: 5px;
+  color: var(--ink);
+  font-size: 0.75rem;
+  font-weight: 720;
+  text-decoration: none;
+  border-bottom: 1px solid currentColor;
+}
+
 .proof-head > p {
   margin-bottom: 3px;
   color: var(--muted);
@@ -1039,6 +1050,10 @@ summary:focus-visible {
     gap: 10px;
   }
 
+  .comparison strong {
+    overflow-wrap: anywhere;
+  }
+
   .lane-row {
     grid-template-columns: 10px 1fr auto;
     gap: 10px;
@@ -1112,6 +1127,11 @@ summary:focus-visible {
 
   .proof-head {
     gap: 18px;
+  }
+
+  .proof-search-link {
+    justify-self: start;
+    margin: 0;
   }
 
   .proof-metrics,
