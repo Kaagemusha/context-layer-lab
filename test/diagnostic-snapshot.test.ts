@@ -79,3 +79,15 @@ test("rejects unknown lane states before rendering", () => {
     /Invalid option/,
   );
 });
+
+test("rejects duplicate record IDs before rendering", () => {
+  const snapshot = buildDiagnosticSnapshot(fixture.scenario, records);
+  assert.throws(
+    () =>
+      verifyDiagnosticSnapshot({
+        ...snapshot,
+        records: [...snapshot.records, snapshot.records[0]],
+      }),
+    /Duplicate record ID/,
+  );
+});

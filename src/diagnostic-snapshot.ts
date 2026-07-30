@@ -21,7 +21,21 @@ export const diagnosticSnapshotSchema = z
     assessment: operationalAssessmentSchema,
     records: z.array(contextRecordSchema),
   })
-  .strict();
+  .strict()
+  .superRefine((snapshot, context) => {
+    const recordIds = new Set<string>();
+
+    snapshot.records.forEach((record, index) => {
+      if (recordIds.has(record.id)) {
+        context.addIssue({
+          code: "custom",
+          message: `Duplicate record ID "${record.id}".`,
+          path: ["records", index, "id"],
+        });
+      }
+      recordIds.add(record.id);
+    });
+  });
 
 export type DiagnosticSnapshot = z.infer<typeof diagnosticSnapshotSchema>;
 
