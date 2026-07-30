@@ -72,6 +72,14 @@ function titleCase(value) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function outcomeLabel(outcome) {
+  return {
+    success: "Success",
+    failed: "Failed",
+    preserved_local: "Local only",
+  }[outcome];
+}
+
 function statusLabel(state) {
   return {
     healthy: "Healthy",
@@ -101,7 +109,7 @@ function laneMarkup(lane) {
       )}">View evidence</button>`
     : "<span class=\"row-note\">No receipt expected</span>";
   const detail = receipt
-    ? `${titleCase(lane.outcome)} · ${formatTime(receipt.observedAt)}`
+    ? `${outcomeLabel(lane.outcome)} · ${formatTime(receipt.observedAt)}`
     : lane.state === "not_due"
       ? `Due ${formatTime(
           snapshot.scenario.lanes.find((item) => item.id === lane.id)?.dueAt,
@@ -286,13 +294,24 @@ function render() {
   elements.currentVerdict.textContent = titleCase(assessment.governedVerdict);
   elements.currentTime.textContent = formatTime(assessment.asOf);
   const hasConflict = assessmentsConflict(assessment);
+  const summaryRecord = evidenceRecords().get(scenario.summary.recordId);
+  const summaryExpired = assessment.evidenceQuality[
+    scenario.summary.recordId
+  ]?.issues.some((issue) => issue.code === "stale_record");
   elements.conflictCard.classList.toggle("resolved", !hasConflict);
   elements.conflictState.textContent = hasConflict ? "Detected" : "None";
   elements.conflictExplanation.textContent = hasConflict
-    ? `The evidence-backed verdict changes the earlier ${assessment.naiveVerdict} aggregate to ${assessment.governedVerdict}.`
+    ? `${summaryRecord?.title ?? "The earlier aggregate"} was superseded ${
+        summaryExpired && summaryRecord
+          ? `after its evidence expired ${formatTime(summaryRecord.validUntil)}`
+          : "by newer evidence"
+      }. The current evidence changes ${assessment.naiveVerdict} to ${assessment.governedVerdict}.`
     : "The current evidence does not contradict the earlier aggregate.";
 
-  elements.laneCount.textContent = `${assessment.laneAssessments.length} lanes`;
+  const dueCount = assessment.laneAssessments.length - notDue.length;
+  elements.laneCount.textContent = `${assessment.laneAssessments.length} lanes · ${dueCount} due${
+    notDue.length ? ` · ${notDue.length} not due` : ""
+  }`;
   elements.lanes.innerHTML = assessment.laneAssessments.map(laneMarkup).join("");
   renderRules();
   renderTimeline();
@@ -311,7 +330,7 @@ function reportText() {
       `Needs attention: ${attention
         .map(
           (lane) =>
-            `${lane.label} (${lane.outcome ? titleCase(lane.outcome) : "missing receipt"})`,
+            `${lane.label} (${lane.outcome ? outcomeLabel(lane.outcome) : "missing receipt"})`,
         )
         .join("; ")}`,
     );
