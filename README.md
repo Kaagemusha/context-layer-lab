@@ -11,6 +11,11 @@ freshness, schedule state, and evidence specificity before answering.
 
 **[Open the local-first diagnostic](https://kaagemusha.github.io/context-layer-lab/)**
 
+This lab establishes **what current evidence supports**. Its companion,
+[Governed Action Lab](https://github.com/Kaagemusha/governed-action-lab),
+starts at that boundary and demonstrates **what may execute, under whose
+authority, and with what receipt**.
+
 ## The Failure It Prevents
 
 ```text
