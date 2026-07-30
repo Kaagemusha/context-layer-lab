@@ -1,0 +1,308 @@
+import { z } from "zod";
+
+import type { ContextRecord } from "./context.js";
+import {
+  buildDiagnosticSnapshot,
+  type DiagnosticSnapshot,
+} from "./diagnostic-snapshot.js";
+import type { OperationalScenario } from "./operational-health.js";
+
+const patrolSchema = z
+  .object({
+    file: z.string().min(1),
+    state: z.string().min(1),
+    timestamp: z.string().datetime({ offset: true }).optional(),
+    host: z.string().min(1).optional(),
+    actionable: z.number().nullable().optional(),
+    fresh: z.boolean(),
+  })
+  .passthrough();
+
+const heartbeatSchema = z
+  .object({
+    loop_id: z.string().min(1),
+    iso_timestamp: z.string().datetime({ offset: true }),
+    host: z.string().min(1),
+    outcome: z.string().min(1).optional(),
+    fresh: z.boolean(),
+  })
+  .passthrough();
+
+const issueSchema = z
+  .object({
+    file: z.string().min(1),
+    title: z.string().min(1),
+    description: z.string().optional(),
+  })
+  .passthrough();
+
+export const reliabilityRollupSchema = z
+  .object({
+    generated_at: z.string().datetime({ offset: true }),
+    status: z.enum(["GREEN", "ATTENTION", "UNKNOWN"]),
+    patrol: patrolSchema.nullable(),
+    heartbeats: z.array(heartbeatSchema),
+    status_reliability_issues: z.array(issueSchema),
+  })
+  .passthrough();
+
+export type ReliabilityRollup = z.infer<typeof reliabilityRollupSchema>;
+
+const SUMMARY_RECORD_ID = "reliability-summary";
+const VALIDITY_HOURS = 36;
+const FAILED_OUTCOMES = new Set([
+  "blocked",
+  "error",
+  "failed",
+  "failure",
+  "publication-unconfirmed",
+]);
+const SUCCESS_OUTCOMES = new Set([
+  "deployed",
+  "integrated",
+  "no-change",
+  "no_change",
+  "observed",
+  "success",
+  "succeeded",
+]);
+
+function addHours(timestamp: string, hours: number): string {
+  return new Date(
+    new Date(timestamp).getTime() + hours * 60 * 60 * 1000,
+  ).toISOString();
+}
+
+function directoryUrl(input: string): URL {
+  const url = new URL(input);
+  if (!url.pathname.endsWith("/")) url.pathname += "/";
+  return url;
+}
+
+function sourceUrl(base: URL, path: string): string {
+  return new URL(
+    path
+      .split("/")
+      .map((segment) => encodeURIComponent(segment))
+      .join("/"),
+    base,
+  ).toString();
+}
+
+function safeId(input: string): string {
+  return encodeURIComponent(input);
+}
+
+function heartbeatOutcome(
+  heartbeat: ReliabilityRollup["heartbeats"][number],
+): "success" | "failed" | "preserved_local" {
+  if (!heartbeat.fresh) return "preserved_local";
+  if (!heartbeat.outcome) return "success";
+
+  const normalized = heartbeat.outcome.toLowerCase();
+  if (FAILED_OUTCOMES.has(normalized)) return "failed";
+  if (SUCCESS_OUTCOMES.has(normalized)) return "success";
+  return "preserved_local";
+}
+
+function makeRecord(input: {
+  id: string;
+  title: string;
+  text: string;
+  tags: string[];
+  observedAt: string;
+  sourceId: string;
+  sourceLabel: string;
+  sourceUrl: string;
+}): ContextRecord {
+  return {
+    id: input.id,
+    title: input.title,
+    summary: input.text,
+    content: input.text,
+    tags: input.tags,
+    owner: "Automation Operations",
+    updatedAt: input.observedAt,
+    validUntil: addHours(input.observedAt, VALIDITY_HOURS),
+    sources: [
+      {
+        id: input.sourceId,
+        label: input.sourceLabel,
+        url: input.sourceUrl,
+        observedAt: input.observedAt,
+      },
+    ],
+    claims: [{ text: input.text, sourceIds: [input.sourceId] }],
+  };
+}
+
+export function adaptReliabilityRollup(
+  input: unknown,
+  sourceBaseUrl: string,
+): DiagnosticSnapshot {
+  const rollup = reliabilityRollupSchema.parse(input);
+  const base = directoryUrl(sourceBaseUrl);
+  const summaryText =
+    rollup.status === "GREEN"
+      ? "Canonical vault reliability signals are currently clear."
+      : rollup.status === "ATTENTION"
+        ? "Canonical vault evidence contains an active reliability concern."
+        : "Canonical vault evidence cannot establish current reliability.";
+  const summaryRecord = makeRecord({
+    id: SUMMARY_RECORD_ID,
+    title: "Vault Reliability Summary",
+    text: summaryText,
+    tags: ["vault", "reliability", "summary"],
+    observedAt: rollup.generated_at,
+    sourceId: "reliability-rollup-source",
+    sourceLabel: "Canonical reliability rollup",
+    sourceUrl: sourceUrl(base, "artifacts/reliability-rollup.mjs"),
+  });
+  const lanes: OperationalScenario["lanes"] = [];
+  const receipts: OperationalScenario["receipts"] = [];
+  const records: ContextRecord[] = [summaryRecord];
+
+  if (rollup.patrol) {
+    const observedAt = rollup.patrol.timestamp ?? rollup.generated_at;
+    const recordId = "reliability-patrol";
+    const actionable = rollup.patrol.actionable ?? 0;
+    const outcome =
+      rollup.patrol.state === "PARSED" &&
+      rollup.patrol.fresh &&
+      actionable === 0
+        ? "success"
+        : actionable > 0
+          ? "failed"
+          : "preserved_local";
+    const text =
+      outcome === "success"
+        ? `The latest host patrol is fresh and reports ${actionable} actionable findings.`
+        : `The latest host patrol is ${rollup.patrol.state.toLowerCase()} with ${actionable} actionable findings.`;
+    lanes.push({
+      id: "host-patrol",
+      label: "Host liveness patrol",
+      dueAt: observedAt,
+    });
+    receipts.push({
+      recordId,
+      laneId: "host-patrol",
+      observedAt,
+      outcome,
+    });
+    records.push(
+      makeRecord({
+        id: recordId,
+        title: "Host Liveness Patrol",
+        text,
+        tags: ["vault", "reliability", "patrol"],
+        observedAt,
+        sourceId: "reliability-patrol-source",
+        sourceLabel: rollup.patrol.file,
+        sourceUrl: sourceUrl(base, `data/liveness/${rollup.patrol.file}`),
+      }),
+    );
+  }
+
+  for (const heartbeat of rollup.heartbeats) {
+    const laneId = `heartbeat-${safeId(heartbeat.loop_id)}`;
+    const recordId = `reliability-${laneId}`;
+    const outcome = heartbeatOutcome(heartbeat);
+    const outcomeText = heartbeat.outcome
+      ? ` with outcome ${heartbeat.outcome}`
+      : "";
+    const text = `${heartbeat.loop_id} was observed at ${heartbeat.iso_timestamp} on ${heartbeat.host}${outcomeText}.`;
+    lanes.push({
+      id: laneId,
+      label: heartbeat.loop_id,
+      dueAt: heartbeat.iso_timestamp,
+    });
+    receipts.push({
+      recordId,
+      laneId,
+      observedAt: heartbeat.iso_timestamp,
+      outcome,
+    });
+    records.push(
+      makeRecord({
+        id: recordId,
+        title: `${heartbeat.loop_id} heartbeat`,
+        text,
+        tags: ["vault", "reliability", "heartbeat", heartbeat.loop_id],
+        observedAt: heartbeat.iso_timestamp,
+        sourceId: `${recordId}-source`,
+        sourceLabel: "Canonical loop heartbeat log",
+        sourceUrl: sourceUrl(base, "data/liveness/heartbeats.jsonl"),
+      }),
+    );
+  }
+
+  for (const issue of rollup.status_reliability_issues) {
+    const issueId = safeId(issue.file);
+    const laneId = `status-issue-${issueId}`;
+    const recordId = `reliability-${laneId}`;
+    const text = issue.description
+      ? `${issue.title}: ${issue.description}`
+      : issue.title;
+    lanes.push({ id: laneId, label: issue.title, dueAt: rollup.generated_at });
+    receipts.push({
+      recordId,
+      laneId,
+      observedAt: rollup.generated_at,
+      outcome: "failed",
+    });
+    records.push(
+      makeRecord({
+        id: recordId,
+        title: issue.title,
+        text,
+        tags: ["vault", "reliability", "active-issue"],
+        observedAt: rollup.generated_at,
+        sourceId: `${recordId}-source`,
+        sourceLabel: issue.file,
+        sourceUrl: sourceUrl(base, `ant/issues/${issue.file}`),
+      }),
+    );
+  }
+
+  if (lanes.length === 0) {
+    const recordId = "reliability-evidence-missing";
+    const text = "The rollup contains no patrol or loop heartbeat evidence.";
+    lanes.push({
+      id: "reliability-evidence",
+      label: "Reliability evidence",
+      dueAt: rollup.generated_at,
+    });
+    receipts.push({
+      recordId,
+      laneId: "reliability-evidence",
+      observedAt: rollup.generated_at,
+      outcome: "preserved_local",
+    });
+    records.push(
+      makeRecord({
+        id: recordId,
+        title: "Reliability Evidence Missing",
+        text,
+        tags: ["vault", "reliability", "missing-evidence"],
+        observedAt: rollup.generated_at,
+        sourceId: `${recordId}-source`,
+        sourceLabel: "Canonical reliability rollup",
+        sourceUrl: sourceUrl(base, "artifacts/reliability-rollup.mjs"),
+      }),
+    );
+  }
+
+  const scenario: OperationalScenario = {
+    question: "Are the vault's current automation reliability signals healthy?",
+    asOf: rollup.generated_at,
+    lanes,
+    summary: {
+      recordId: SUMMARY_RECORD_ID,
+      observedAt: rollup.generated_at,
+      verdict: rollup.status === "GREEN" ? "healthy" : "attention",
+    },
+    receipts,
+  };
+
+  return buildDiagnosticSnapshot(scenario, records);
+}

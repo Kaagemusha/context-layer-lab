@@ -37,6 +37,8 @@
     "snapshot:age": "node scripts/check-snapshot-age.mjs",
     "diagnose": "npm run build --silent && node dist/src/diagnose-runner.js",
     "adapt:trajectory": "npm run build --silent && node dist/src/adapt-trajectory-runner.js",
+    "adapt:reliability": "npm run build --silent && node dist/src/adapt-reliability-runner.js",
+    "diagnose:vault": "npm run build --silent && node dist/src/diagnose-vault-runner.js",
     "browser:sync": "node scripts/build-browser-runtime.mjs",
     "browser:check": "node scripts/build-browser-runtime.mjs --check",
     "demo:sync": "npm run build --silent && npm run browser:sync --silent && node scripts/sync-demo.mjs",

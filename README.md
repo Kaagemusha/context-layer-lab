@@ -97,6 +97,33 @@ npm run adapt:trajectory -- \
 Unknown or partial end states map to `preserved_local`, which requires
 attention rather than being promoted to success. Real inputs remain local.
 
+### Private vault diagnostic
+
+The lab can also read a vault's canonical reliability rollup and produce the
+same inspectable snapshot in one command:
+
+```bash
+npm run diagnose:vault -- \
+  --vault-root /absolute/path/to/private-vault \
+  --output /tmp/vault-reliability.json
+```
+
+Open the resulting file in the console with **Open snapshot**. The command
+runs the vault's own `artifacts/reliability-rollup.mjs --json`; it does not
+probe hosts, mutate the vault, or publish private evidence. Patrol
+actionability and fresh loop heartbeats become evidence lanes. Historical
+reliability issues remain context unless the canonical rollup includes them
+in `status_reliability_issues`.
+
+For an already-generated rollup:
+
+```bash
+npm run adapt:reliability -- \
+  --input /tmp/reliability-rollup.json \
+  --source-base-url file:///absolute/path/to/private-vault/ \
+  --output /tmp/vault-reliability.json
+```
+
 Add the compiled stdio server to an MCP client:
 
 ```json
