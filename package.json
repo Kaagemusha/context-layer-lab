@@ -43,7 +43,9 @@
     "browser:check": "node scripts/build-browser-runtime.mjs --check",
     "demo:sync": "npm run build --silent && npm run browser:sync --silent && node scripts/sync-demo.mjs",
     "demo:check": "npm run build --silent && npm run browser:check --silent && node scripts/sync-demo.mjs --check",
-    "check": "npm run typecheck && npm test && npm run eval && npm run ingest:check && npm run fixture:check && npm run demo:check",
+    "public-safety:check": "node scripts/check-public-safety.mjs",
+    "public-safety:install": "git config core.hooksPath .githooks",
+    "check": "npm run public-safety:check && npm run typecheck && npm test && npm run eval && npm run ingest:check && npm run fixture:check && npm run demo:check",
     "start": "node dist/src/server.js"
   },
   "dependencies": {
