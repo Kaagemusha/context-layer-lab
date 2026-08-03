@@ -3,6 +3,12 @@
 A small, inspectable reference implementation for preventing AI agents from
 acting on stale operational context.
 
+**Status: reference implementation, not a production system.** This repository
+demonstrates governed context records, provenance, validity windows,
+freshness-aware retrieval, and a naive-versus-governed failure contrast. It
+does not compete with production context or memory platforms on retrieval
+scale, storage architecture, access control, or poisoning defense.
+
 The primary demonstration asks a simple question: **are all scheduled
 automations healthy?** An earlier dashboard says yes. Newer terminal receipts
 show that one run failed and another produced work that was never integrated.
@@ -110,7 +116,9 @@ same inspectable snapshot in one command:
 ```bash
 npm run diagnose:vault -- \
   --vault-root /absolute/path/to/private-vault \
-  --output /tmp/vault-reliability.json
+  --output /tmp/vault-reliability.json \
+  --brief-output /tmp/vault-context-health.md \
+  --previous /path/to/previous-vault-reliability.json
 ```
 
 Open the resulting file in the console with **Open snapshot**. The command
@@ -119,6 +127,11 @@ probe hosts, mutate the vault, or publish private evidence. Patrol
 actionability and fresh loop heartbeats become evidence lanes. Historical
 reliability issues remain context unless the canonical rollup includes them
 in `status_reliability_issues`.
+
+When the patrol declares its accounting totals, the adapter requires every
+expected lane to be accounted for before it can report healthy. The optional
+operator brief summarizes status, coverage, material change, evidence time,
+and the next inspection without a model call.
 
 For an already-generated rollup:
 

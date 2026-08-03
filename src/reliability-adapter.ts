@@ -13,6 +13,10 @@ const patrolSchema = z
     state: z.string().min(1),
     timestamp: z.string().datetime({ offset: true }).optional(),
     host: z.string().min(1).optional(),
+    checked: z.number().int().nonnegative().optional(),
+    ok: z.number().int().nonnegative().optional(),
+    pending: z.number().int().nonnegative().optional(),
+    observed_pending_review: z.number().int().nonnegative().optional(),
     actionable: z.number().nullable().optional(),
     fresh: z.boolean(),
   })
@@ -61,6 +65,17 @@ export const reliabilityRollupSchema = z
   });
 
 export type ReliabilityRollup = z.infer<typeof reliabilityRollupSchema>;
+
+export type ReliabilityCoverage = {
+  expected: number | null;
+  accountedFor: number;
+  verified: number;
+  pending: number;
+  awaitingReview: number;
+  actionable: number;
+  unknown: number | null;
+  complete: boolean;
+};
 
 const SUMMARY_RECORD_ID = "reliability-summary";
 const VALIDITY_HOURS = 36;
@@ -130,6 +145,36 @@ function heartbeatOutcome(
   return "preserved_local";
 }
 
+export function reliabilityCoverage(
+  patrol: ReliabilityRollup["patrol"],
+): ReliabilityCoverage {
+  const expected = patrol?.checked ?? null;
+  const verified = patrol?.ok ?? 0;
+  const pending = patrol?.pending ?? 0;
+  const awaitingReview = patrol?.observed_pending_review ?? 0;
+  const actionable = patrol?.actionable ?? 0;
+  const countsKnown =
+    patrol !== null &&
+    expected !== null &&
+    patrol.ok !== undefined &&
+    patrol.pending !== undefined &&
+    patrol.observed_pending_review !== undefined &&
+    typeof patrol.actionable === "number";
+  const accountedFor = verified + pending + awaitingReview + actionable;
+  const unknown = expected === null ? null : Math.max(0, expected - accountedFor);
+
+  return {
+    expected,
+    accountedFor,
+    verified,
+    pending,
+    awaitingReview,
+    actionable,
+    unknown,
+    complete: countsKnown && accountedFor === expected,
+  };
+}
+
 function makeRecord(input: {
   id: string;
   title: string;
@@ -191,20 +236,22 @@ export function adaptReliabilityRollup(
     const observedAt = rollup.patrol.timestamp ?? rollup.generated_at;
     const recordId = "reliability-patrol";
     const actionable = rollup.patrol.actionable;
+    const coverage = reliabilityCoverage(rollup.patrol);
     const outcome =
       rollup.patrol.state === "PARSED" &&
       rollup.patrol.fresh &&
+      coverage.complete &&
       actionable === 0
         ? "success"
         : typeof actionable === "number" && actionable > 0
           ? "failed"
           : "preserved_local";
-    const text =
-      outcome === "success"
-        ? `The latest host patrol is fresh and reports ${actionable} actionable findings.`
-        : typeof actionable !== "number"
-          ? `The latest host patrol is ${rollup.patrol.fresh ? "fresh" : "stale"}, has state ${rollup.patrol.state.toLowerCase()}, and does not report an actionable count.`
-          : `The latest host patrol is ${rollup.patrol.fresh ? "fresh" : "stale"}, has state ${rollup.patrol.state.toLowerCase()}, and reports ${actionable} actionable findings.`;
+    const coverageText = coverage.complete
+      ? `${coverage.accountedFor}/${coverage.expected} lanes are accounted for: ${coverage.verified} verified, ${coverage.pending} pending, ${coverage.awaitingReview} awaiting review, and ${coverage.actionable} actionable.`
+      : coverage.expected === null
+        ? "The patrol does not declare expected-lane coverage."
+        : `The patrol accounts for ${coverage.accountedFor}/${coverage.expected} expected lanes; ${coverage.unknown ?? 0} are unknown.`;
+    const text = `The latest host patrol is ${rollup.patrol.fresh ? "fresh" : "stale"}, has state ${rollup.patrol.state.toLowerCase()}, and ${typeof actionable === "number" ? `reports ${actionable} actionable findings` : "does not report an actionable count"}. ${coverageText}`;
     lanes.push({
       id: "host-patrol",
       label: "Host liveness patrol",

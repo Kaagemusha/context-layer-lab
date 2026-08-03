@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 
 import { execFileSync } from "node:child_process";
-import { access, writeFile } from "node:fs/promises";
+import { access, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { adaptReliabilityRollup } from "./reliability-adapter.js";
+import { verifyDiagnosticSnapshot } from "./diagnostic-snapshot.js";
+import { buildOperatorBrief, renderOperatorBrief } from "./operator-brief.js";
 
 function argumentValue(name: string): string | undefined {
   const index = process.argv.indexOf(name);
@@ -14,9 +16,11 @@ function argumentValue(name: string): string | undefined {
 
 const vaultRoot = argumentValue("--vault-root");
 const outputPath = argumentValue("--output");
+const briefOutputPath = argumentValue("--brief-output");
+const previousPath = argumentValue("--previous");
 if (!vaultRoot) {
   throw new Error(
-    "Usage: npm run diagnose:vault -- --vault-root DIRECTORY [--output FILE]",
+    "Usage: npm run diagnose:vault -- --vault-root DIRECTORY [--output FILE] [--brief-output FILE] [--previous SNAPSHOT]",
   );
 }
 
@@ -36,6 +40,22 @@ const snapshot = adaptReliabilityRollup(
   pathToFileURL(`${root}/`).toString(),
 );
 const serialized = `${JSON.stringify(snapshot, null, 2)}\n`;
+
+let previous;
+if (previousPath) {
+  try {
+    previous = verifyDiagnosticSnapshot(
+      JSON.parse(await readFile(resolve(previousPath), "utf8")),
+    );
+  } catch {
+    previous = undefined;
+  }
+}
+
+if (briefOutputPath) {
+  const brief = buildOperatorBrief(rollup, snapshot, previous);
+  await writeFile(resolve(briefOutputPath), renderOperatorBrief(brief));
+}
 
 if (outputPath) {
   await writeFile(resolve(outputPath), serialized);
