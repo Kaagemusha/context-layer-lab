@@ -133,6 +133,24 @@ expected lane to be accounted for before it can report healthy. The optional
 operator brief summarizes status, coverage, material change, evidence time,
 and the next inspection without a model call.
 
+### Operational proof
+
+This adapter now runs in a scheduled private reliability path. The integration
+reads the canonical rollup, preserves the previous snapshot for change
+detection, and writes both the inspectable JSON packet and a five-line operator
+brief. A healthy, unchanged result stays quiet; incomplete coverage, a material
+state change, or an actionable lane is surfaced for review.
+
+```text
+canonical rollup -> deterministic adapter -> snapshot + operator brief
+                                      healthy and unchanged -> stay quiet
+                                      unknown or actionable -> inspect evidence
+```
+
+The deployment contains no model call and publishes no private records here.
+Its role is deliberately narrow: turn recurring reliability telemetry into a
+bounded answer that can be checked before an operator or agent acts on it.
+
 For an already-generated rollup:
 
 ```bash
