@@ -8,6 +8,7 @@ export const sourceSchema = z
     label: z.string().min(1),
     url: z.string().url(),
     observedAt: z.string().datetime({ offset: true }),
+    contentHash: z.string().regex(/^[a-f0-9]{64}$/).optional(),
   })
   .strict();
 

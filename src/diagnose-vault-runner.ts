@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { access, readFile, writeFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { isAbsolute, join, relative, resolve, sep } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { adaptReliabilityRollup } from "./reliability-adapter.js";
 import { verifyDiagnosticSnapshot } from "./diagnostic-snapshot.js";
@@ -35,10 +36,27 @@ const rollup = JSON.parse(
     { encoding: "utf8", maxBuffer: 5 * 1024 * 1024 },
   ),
 );
-const snapshot = adaptReliabilityRollup(
+const adapted = adaptReliabilityRollup(
   rollup,
   pathToFileURL(`${root}/`).toString(),
 );
+const snapshot = {
+  ...adapted,
+  records: await Promise.all(adapted.records.map(async (record) => ({
+    ...record,
+    sources: await Promise.all(record.sources.map(async (source) => {
+      const url = new URL(source.url);
+      if (url.protocol !== "file:") return source;
+      const sourcePath = resolve(fileURLToPath(url));
+      const pathFromRoot = relative(root, sourcePath);
+      if (pathFromRoot === ".." || pathFromRoot.startsWith(`..${sep}`) || isAbsolute(pathFromRoot)) {
+        throw new Error(`Diagnostic source escapes vault root: ${source.label}`);
+      }
+      const bytes = await readFile(sourcePath);
+      return { ...source, contentHash: createHash("sha256").update(bytes).digest("hex") };
+    })),
+  }))),
+};
 const serialized = `${JSON.stringify(snapshot, null, 2)}\n`;
 
 let previous;
