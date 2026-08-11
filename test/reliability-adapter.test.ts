@@ -72,6 +72,20 @@ test("maps a green vault rollup to healthy governed evidence", () => {
   );
 });
 
+test("maps an applied heartbeat to successful governed evidence", () => {
+  const snapshot = adaptReliabilityRollup(
+    {
+      ...baseRollup,
+      heartbeats: [{ ...baseRollup.heartbeats[0], outcome: "applied" }],
+    },
+    "file:///private/vault",
+  );
+
+  assert.equal(snapshot.assessment.governedVerdict, "healthy");
+  assert.equal(snapshot.assessment.laneAssessments[1]?.outcome, "success");
+  assert.equal(snapshot.assessment.laneAssessments[1]?.state, "healthy");
+});
+
 test("missing heartbeat outcomes fail closed", () => {
   const snapshot = adaptReliabilityRollup(
     {

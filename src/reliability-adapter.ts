@@ -87,6 +87,7 @@ const FAILED_OUTCOMES = new Set([
   "publication-unconfirmed",
 ]);
 const SUCCESS_OUTCOMES = new Set([
+  "applied",
   "deployed",
   "integrated",
   "no-change",
