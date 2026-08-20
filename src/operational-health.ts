@@ -2,25 +2,21 @@ import { z } from "zod";
 
 import {
   contextRecordSchema,
+  operationalLaneSchema,
+  operationalOutcomeSchema,
+  operationalVerdictSchema,
   validationIssueSchema,
   validateRecord,
   type ContextRecord,
+  type OperationalAssertion,
   type ValidationIssue,
 } from "./context.js";
-
-const laneSchema = z
-  .object({
-    id: z.string().min(1),
-    label: z.string().min(1),
-    dueAt: z.string().datetime({ offset: true }),
-  })
-  .strict();
 
 const summarySchema = z
   .object({
     recordId: z.string().min(1),
     observedAt: z.string().datetime({ offset: true }),
-    verdict: z.enum(["healthy", "attention"]),
+    verdict: operationalVerdictSchema,
   })
   .strict();
 
@@ -29,7 +25,7 @@ const receiptSchema = z
     recordId: z.string().min(1),
     laneId: z.string().min(1),
     observedAt: z.string().datetime({ offset: true }),
-    outcome: z.enum(["success", "failed", "preserved_local"]),
+    outcome: operationalOutcomeSchema,
   })
   .strict();
 
@@ -37,7 +33,7 @@ export const operationalScenarioSchema = z
   .object({
     question: z.string().min(1),
     asOf: z.string().datetime({ offset: true }),
-    lanes: z.array(laneSchema).min(1),
+    lanes: z.array(operationalLaneSchema).min(1),
     summary: summarySchema,
     receipts: z.array(receiptSchema),
   })
@@ -96,6 +92,62 @@ export function selectedEvidenceRecordIds(
   );
 }
 
+function assertOperationalBinding(
+  record: ContextRecord,
+  expected: OperationalAssertion,
+): void {
+  const operationalClaims = record.claims.filter(
+    (claim) => claim.operational !== undefined,
+  );
+  if (operationalClaims.length !== 1) {
+    throw new Error(
+      `Operational evidence record "${record.id}" must contain exactly one typed operational assertion.`,
+    );
+  }
+
+  const operationalClaim = operationalClaims[0]!;
+  const assertion = operationalClaim.operational!;
+  const hasSourceAtAssertionTime = operationalClaim.sourceIds.some(
+    (sourceId) =>
+      record.sources.some(
+        (source) =>
+          source.id === sourceId && source.observedAt === assertion.observedAt,
+      ),
+  );
+  if (!hasSourceAtAssertionTime) {
+    throw new Error(
+      `Typed operational assertion for record "${record.id}" must identify a declared source observed at ${assertion.observedAt}.`,
+    );
+  }
+
+  let matches = false;
+  if (assertion.kind === "summary" && expected.kind === "summary") {
+    matches =
+      assertion.observedAt === expected.observedAt &&
+      assertion.verdict === expected.verdict &&
+      assertion.lanes.length === expected.lanes.length &&
+      assertion.lanes.every((lane, index) => {
+        const expectedLane = expected.lanes[index];
+        return (
+          expectedLane !== undefined &&
+          lane.id === expectedLane.id &&
+          lane.label === expectedLane.label &&
+          lane.dueAt === expectedLane.dueAt
+        );
+      });
+  } else if (assertion.kind === "receipt" && expected.kind === "receipt") {
+    matches =
+      assertion.laneId === expected.laneId &&
+      assertion.observedAt === expected.observedAt &&
+      assertion.outcome === expected.outcome;
+  }
+  if (!matches) {
+    throw new Error(
+      `Scenario ${expected.kind} for record "${record.id}" does not match its typed operational assertion.`,
+    );
+  }
+}
+
 export function assessOperationalHealth(
   input: unknown,
   records: unknown[],
@@ -103,6 +155,12 @@ export function assessOperationalHealth(
   const scenario = operationalScenarioSchema.parse(input);
   const asOf = new Date(scenario.asOf);
   const parsedRecords = new Map<string, ContextRecord>();
+
+  for (const receipt of scenario.receipts) {
+    if (!scenario.lanes.some((lane) => lane.id === receipt.laneId)) {
+      throw new Error(`Receipt references unknown lane "${receipt.laneId}"`);
+    }
+  }
 
   for (const inputRecord of records) {
     const parsed = contextRecordSchema.safeParse(inputRecord);
@@ -124,11 +182,35 @@ export function assessOperationalHealth(
     };
   }
 
+  const summaryRecord = parsedRecords.get(scenario.summary.recordId);
+  if (!summaryRecord) {
+    throw new Error(
+      `Operational evidence record "${scenario.summary.recordId}" was not found`,
+    );
+  }
+  assertOperationalBinding(summaryRecord, {
+    kind: "summary",
+    observedAt: scenario.summary.observedAt,
+    verdict: scenario.summary.verdict,
+    lanes: scenario.lanes,
+  });
+  for (const receipt of scenario.receipts) {
+    const record = parsedRecords.get(receipt.recordId);
+    if (!record) {
+      throw new Error(
+        `Operational evidence record "${receipt.recordId}" was not found`,
+      );
+    }
+    assertOperationalBinding(record, {
+      kind: "receipt",
+      laneId: receipt.laneId,
+      observedAt: receipt.observedAt,
+      outcome: receipt.outcome,
+    });
+  }
+
   const receiptsByLane = new Map<string, OperationalScenario["receipts"]>();
   for (const receipt of scenario.receipts) {
-    if (!scenario.lanes.some((lane) => lane.id === receipt.laneId)) {
-      throw new Error(`Receipt references unknown lane "${receipt.laneId}"`);
-    }
     if (new Date(receipt.observedAt) > asOf) continue;
     const laneReceipts = receiptsByLane.get(receipt.laneId) ?? [];
     laneReceipts.push(receipt);

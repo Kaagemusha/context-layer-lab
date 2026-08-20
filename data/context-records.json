@@ -25,7 +25,34 @@
         "text": "All scheduled automation lanes are healthy.",
         "sourceIds": [
           "dashboard-snapshot-0730"
-        ]
+        ],
+        "operational": {
+          "kind": "summary",
+          "observedAt": "2026-07-28T07:30:00Z",
+          "verdict": "healthy",
+          "lanes": [
+            {
+              "id": "morning-brief",
+              "label": "Morning Brief",
+              "dueAt": "2026-07-28T07:55:00Z"
+            },
+            {
+              "id": "site-refresh",
+              "label": "Site Refresh",
+              "dueAt": "2026-07-28T08:15:00Z"
+            },
+            {
+              "id": "research-watch",
+              "label": "Research Watch",
+              "dueAt": "2026-07-28T08:30:00Z"
+            },
+            {
+              "id": "ai-radar",
+              "label": "AI Radar",
+              "dueAt": "2026-07-28T17:30:00Z"
+            }
+          ]
+        }
       }
     ]
   },
@@ -55,7 +82,13 @@
         "text": "The Morning Brief run completed successfully.",
         "sourceIds": [
           "morning-run-0802"
-        ]
+        ],
+        "operational": {
+          "kind": "receipt",
+          "laneId": "morning-brief",
+          "observedAt": "2026-07-28T08:02:00Z",
+          "outcome": "success"
+        }
       }
     ]
   },
@@ -85,7 +118,13 @@
         "text": "The Research Watch output is preserved locally and is not integrated.",
         "sourceIds": [
           "research-run-0905"
-        ]
+        ],
+        "operational": {
+          "kind": "receipt",
+          "laneId": "research-watch",
+          "observedAt": "2026-07-28T09:05:00Z",
+          "outcome": "preserved_local"
+        }
       }
     ]
   },
@@ -115,7 +154,13 @@
         "text": "The Site Refresh run failed before deployment.",
         "sourceIds": [
           "site-run-0840"
-        ]
+        ],
+        "operational": {
+          "kind": "receipt",
+          "laneId": "site-refresh",
+          "observedAt": "2026-07-28T08:40:00Z",
+          "outcome": "failed"
+        }
       }
     ]
   },

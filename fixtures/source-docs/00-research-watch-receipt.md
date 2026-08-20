@@ -18,7 +18,13 @@
   "claims": [
     {
       "text": "The Research Watch output is preserved locally and is not integrated.",
-      "sourceIds": ["research-run-0905"]
+      "sourceIds": ["research-run-0905"],
+      "operational": {
+        "kind": "receipt",
+        "laneId": "research-watch",
+        "observedAt": "2026-07-28T09:05:00Z",
+        "outcome": "preserved_local"
+      }
     }
   ]
 }

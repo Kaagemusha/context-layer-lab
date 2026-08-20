@@ -18,7 +18,13 @@
   "claims": [
     {
       "text": "The Morning Brief run completed successfully.",
-      "sourceIds": ["morning-run-0802"]
+      "sourceIds": ["morning-run-0802"],
+      "operational": {
+        "kind": "receipt",
+        "laneId": "morning-brief",
+        "observedAt": "2026-07-28T08:02:00Z",
+        "outcome": "success"
+      }
     }
   ]
 }

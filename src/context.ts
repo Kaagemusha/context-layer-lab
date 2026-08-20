@@ -12,10 +12,45 @@ export const sourceSchema = z
   })
   .strict();
 
+export const operationalVerdictSchema = z.enum(["healthy", "attention"]);
+export const operationalOutcomeSchema = z.enum([
+  "success",
+  "failed",
+  "preserved_local",
+]);
+export const operationalLaneSchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    dueAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
+export const operationalAssertionSchema = z.discriminatedUnion("kind", [
+  z
+    .object({
+      kind: z.literal("summary"),
+      observedAt: z.string().datetime({ offset: true }),
+      verdict: operationalVerdictSchema,
+      lanes: z.array(operationalLaneSchema).min(1),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("receipt"),
+      laneId: z.string().min(1),
+      observedAt: z.string().datetime({ offset: true }),
+      outcome: operationalOutcomeSchema,
+    })
+    .strict(),
+]);
+
+export type OperationalAssertion = z.infer<typeof operationalAssertionSchema>;
+
 export const claimSchema = z
   .object({
     text: z.string().min(1),
     sourceIds: z.array(z.string().min(1)),
+    operational: operationalAssertionSchema.optional(),
   })
   .strict();
 

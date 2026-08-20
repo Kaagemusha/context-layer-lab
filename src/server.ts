@@ -22,7 +22,7 @@ function toolResult(value: unknown, isError = false) {
 const { records, receipts, snapshotAsOf } = await loadContextSnapshot();
 const server = new McpServer({
   name: "context-layer-lab",
-  version: "0.1.0",
+  version: "0.2.0",
 });
 
 server.registerTool(

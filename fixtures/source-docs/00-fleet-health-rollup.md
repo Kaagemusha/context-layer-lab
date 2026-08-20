@@ -18,7 +18,34 @@
   "claims": [
     {
       "text": "All scheduled automation lanes are healthy.",
-      "sourceIds": ["dashboard-snapshot-0730"]
+      "sourceIds": ["dashboard-snapshot-0730"],
+      "operational": {
+        "kind": "summary",
+        "observedAt": "2026-07-28T07:30:00Z",
+        "verdict": "healthy",
+        "lanes": [
+          {
+            "id": "morning-brief",
+            "label": "Morning Brief",
+            "dueAt": "2026-07-28T07:55:00Z"
+          },
+          {
+            "id": "site-refresh",
+            "label": "Site Refresh",
+            "dueAt": "2026-07-28T08:15:00Z"
+          },
+          {
+            "id": "research-watch",
+            "label": "Research Watch",
+            "dueAt": "2026-07-28T08:30:00Z"
+          },
+          {
+            "id": "ai-radar",
+            "label": "AI Radar",
+            "dueAt": "2026-07-28T17:30:00Z"
+          }
+        ]
+      }
     }
   ]
 }

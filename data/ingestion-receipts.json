@@ -2,8 +2,8 @@
   {
     "recordId": "fleet-health-rollup",
     "documentPath": "fixtures/source-docs/00-fleet-health-rollup.md",
-    "contentSha256": "061c25e85e9f42554458198c5b69d0978663dd9827a8ceacdcea59d8a82557c4",
-    "byteLength": 807,
+    "contentSha256": "e2be0a12cf6431ac2be9805de6fcf794dfec87ac1e689790cab682585e4ba744",
+    "byteLength": 1528,
     "declaredSourceIds": [
       "dashboard-snapshot-0730"
     ],
@@ -12,8 +12,8 @@
   {
     "recordId": "morning-brief-receipt",
     "documentPath": "fixtures/source-docs/00-morning-brief-receipt.md",
-    "contentSha256": "756476f17b1b520d44fc153d1ab85f68d09589056f5b358a2d6b60c7af1070b1",
-    "byteLength": 809,
+    "contentSha256": "f7cff20eb038c04f4acc402fbc1b779a01c85a5ba7d01f2d276bda56e97b9f22",
+    "byteLength": 978,
     "declaredSourceIds": [
       "morning-run-0802"
     ],
@@ -22,8 +22,8 @@
   {
     "recordId": "research-watch-receipt",
     "documentPath": "fixtures/source-docs/00-research-watch-receipt.md",
-    "contentSha256": "d7c659913319ce14319841f71550a265d4773db34fb10c94d78666f9babe2385",
-    "byteLength": 897,
+    "contentSha256": "3a92ecfd5c694a8eaa5948590d2f546183e8978e46c30c3dc1c006b1345f6589",
+    "byteLength": 1075,
     "declaredSourceIds": [
       "research-run-0905"
     ],
@@ -32,8 +32,8 @@
   {
     "recordId": "site-refresh-receipt",
     "documentPath": "fixtures/source-docs/00-site-refresh-receipt.md",
-    "contentSha256": "c10bdd07a9d873a50413351cbac791ee573136a745a0c2ec1671e5ad3d6d6008",
-    "byteLength": 824,
+    "contentSha256": "bbb272758f099a99da833ab0923b7f4daaeb863694f9c83ff6a52cee28e66f66",
+    "byteLength": 991,
     "declaredSourceIds": [
       "site-run-0840"
     ],

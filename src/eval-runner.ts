@@ -10,6 +10,13 @@ type EvaluationCase = {
   expectedCodes: ValidationIssueCode[];
 };
 
+type OperationalAdversarialCase = {
+  name: string;
+  receiptRecordId: string;
+  scenarioOutcome: "success" | "failed" | "preserved_local";
+  expectedErrorIncludes: string;
+};
+
 const casesUrl = new URL("../../evals/cases.json", import.meta.url);
 const cases: EvaluationCase[] = JSON.parse(await readFile(casesUrl, "utf8"));
 
@@ -63,7 +70,31 @@ console.log(
 );
 if (!operationalPassed) failures += 1;
 
-const total = cases.length + 1;
+const adversarialCases: OperationalAdversarialCase[] =
+  operationalFixture.adversarialCases ?? [];
+for (const evaluation of adversarialCases) {
+  const adversarialScenario = structuredClone(operationalFixture.scenario);
+  const receipt = adversarialScenario.receipts.find(
+    (candidate: { recordId: string }) =>
+      candidate.recordId === evaluation.receiptRecordId,
+  );
+  let passed = false;
+  let detail = `receipt ${evaluation.receiptRecordId} was not found`;
+  if (receipt) {
+    receipt.outcome = evaluation.scenarioOutcome;
+    try {
+      assessOperationalHealth(adversarialScenario, records);
+      detail = "assessment unexpectedly succeeded";
+    } catch (error) {
+      detail = error instanceof Error ? error.message : String(error);
+      passed = detail.includes(evaluation.expectedErrorIncludes);
+    }
+  }
+  console.log(`${passed ? "PASS" : "FAIL"} ${evaluation.name}: ${detail}`);
+  if (!passed) failures += 1;
+}
+
+const total = cases.length + 1 + adversarialCases.length;
 console.log(`\n${total - failures}/${total} evaluations passed`);
 if (failures > 0) {
   process.exitCode = 1;

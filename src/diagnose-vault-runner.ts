@@ -65,7 +65,9 @@ if (previousPath) {
     previous = verifyDiagnosticSnapshot(
       JSON.parse(await readFile(resolve(previousPath), "utf8")),
     );
-  } catch {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`previous snapshot ignored: ${message}`);
     previous = undefined;
   }
 }

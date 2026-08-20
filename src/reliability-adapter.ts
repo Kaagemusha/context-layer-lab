@@ -1,6 +1,9 @@
 import { z } from "zod";
 
-import type { ContextRecord } from "./context.js";
+import type {
+  ContextRecord,
+  OperationalAssertion,
+} from "./context.js";
 import {
   buildDiagnosticSnapshot,
   type DiagnosticSnapshot,
@@ -185,6 +188,7 @@ function makeRecord(input: {
   sourceId: string;
   sourceLabel: string;
   sourceUrl: string;
+  operational: OperationalAssertion;
 }): ContextRecord {
   return {
     id: input.id,
@@ -203,7 +207,13 @@ function makeRecord(input: {
         observedAt: input.observedAt,
       },
     ],
-    claims: [{ text: input.text, sourceIds: [input.sourceId] }],
+    claims: [
+      {
+        text: input.text,
+        sourceIds: [input.sourceId],
+        operational: input.operational,
+      },
+    ],
   };
 }
 
@@ -219,19 +229,9 @@ export function adaptReliabilityRollup(
       : rollup.status === "ATTENTION"
         ? "Canonical vault evidence contains an active reliability concern."
         : "Canonical vault evidence cannot establish current reliability.";
-  const summaryRecord = makeRecord({
-    id: SUMMARY_RECORD_ID,
-    title: "Vault Reliability Summary",
-    text: summaryText,
-    tags: ["vault", "reliability", "summary"],
-    observedAt: rollup.generated_at,
-    sourceId: "reliability-rollup-source",
-    sourceLabel: "Canonical reliability rollup",
-    sourceUrl: sourceUrl(base, "artifacts/reliability-rollup.mjs"),
-  });
   const lanes: OperationalScenario["lanes"] = [];
   const receipts: OperationalScenario["receipts"] = [];
-  const records: ContextRecord[] = [summaryRecord];
+  const records: ContextRecord[] = [];
 
   if (rollup.patrol) {
     const observedAt = rollup.patrol.timestamp ?? rollup.generated_at;
@@ -274,6 +274,12 @@ export function adaptReliabilityRollup(
         sourceId: "reliability-patrol-source",
         sourceLabel: rollup.patrol.file,
         sourceUrl: sourceUrl(base, `data/liveness/${rollup.patrol.file}`),
+        operational: {
+          kind: "receipt",
+          laneId: "host-patrol",
+          observedAt,
+          outcome,
+        },
       }),
     );
   }
@@ -307,6 +313,12 @@ export function adaptReliabilityRollup(
         sourceId: `${recordId}-source`,
         sourceLabel: "Canonical loop heartbeat log",
         sourceUrl: sourceUrl(base, "data/liveness/heartbeats.jsonl"),
+        operational: {
+          kind: "receipt",
+          laneId,
+          observedAt: heartbeat.iso_timestamp,
+          outcome,
+        },
       }),
     );
   }
@@ -335,6 +347,12 @@ export function adaptReliabilityRollup(
         sourceId: `${recordId}-source`,
         sourceLabel: issue.file,
         sourceUrl: sourceUrl(base, `ant/issues/${issue.file}`),
+        operational: {
+          kind: "receipt",
+          laneId,
+          observedAt: rollup.generated_at,
+          outcome: "failed",
+        },
       }),
     );
   }
@@ -363,9 +381,32 @@ export function adaptReliabilityRollup(
         sourceId: `${recordId}-source`,
         sourceLabel: "Canonical reliability rollup",
         sourceUrl: sourceUrl(base, "artifacts/reliability-rollup.mjs"),
+        operational: {
+          kind: "receipt",
+          laneId: "reliability-evidence",
+          observedAt: rollup.generated_at,
+          outcome: "preserved_local",
+        },
       }),
     );
   }
+
+  const summaryRecord = makeRecord({
+    id: SUMMARY_RECORD_ID,
+    title: "Vault Reliability Summary",
+    text: summaryText,
+    tags: ["vault", "reliability", "summary"],
+    observedAt: rollup.generated_at,
+    sourceId: "reliability-rollup-source",
+    sourceLabel: "Canonical reliability rollup",
+    sourceUrl: sourceUrl(base, "artifacts/reliability-rollup.mjs"),
+    operational: {
+      kind: "summary",
+      observedAt: rollup.generated_at,
+      verdict: rollup.status === "GREEN" ? "healthy" : "attention",
+      lanes,
+    },
+  });
 
   const scenario: OperationalScenario = {
     question: "Are the vault's current automation reliability signals healthy?",
@@ -379,5 +420,5 @@ export function adaptReliabilityRollup(
     receipts,
   };
 
-  return buildDiagnosticSnapshot(scenario, records);
+  return buildDiagnosticSnapshot(scenario, [summaryRecord, ...records]);
 }

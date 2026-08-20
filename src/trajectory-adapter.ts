@@ -128,6 +128,12 @@ export function adaptTrajectoryRuns(input: unknown): DiagnosticSnapshot {
       {
         text: packet.summary.text,
         sourceIds: ["trajectory-summary-source"],
+        operational: {
+          kind: "summary",
+          observedAt: packet.summary.observedAt,
+          verdict: packet.summary.verdict,
+          lanes: packet.lanes,
+        },
       },
     ],
   };
@@ -163,6 +169,12 @@ export function adaptTrajectoryRuns(input: unknown): DiagnosticSnapshot {
         {
           text: run.result.summary,
           sourceIds: [sourceId],
+          operational: {
+            kind: "receipt",
+            laneId: run.task.lane,
+            observedAt: run.ended_at,
+            outcome: outcomeFor(run.result.state),
+          },
         },
       ],
     };

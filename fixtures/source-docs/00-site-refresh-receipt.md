@@ -18,7 +18,13 @@
   "claims": [
     {
       "text": "The Site Refresh run failed before deployment.",
-      "sourceIds": ["site-run-0840"]
+      "sourceIds": ["site-run-0840"],
+      "operational": {
+        "kind": "receipt",
+        "laneId": "site-refresh",
+        "observedAt": "2026-07-28T08:40:00Z",
+        "outcome": "failed"
+      }
     }
   ]
 }

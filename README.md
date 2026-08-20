@@ -42,7 +42,8 @@ The implementation demonstrates that:
 - newer terminal receipts override an expired aggregate;
 - a not-yet-due lane is not mislabeled as failed;
 - `PRESERVED_LOCAL` is not confused with successful integration;
-- every conclusion links to a typed evidence record;
+- every decision-bearing summary, receipt, and lane schedule exactly matches a
+  source-linked typed assertion;
 - malformed, unsupported, missing, and stale context fail visibly;
 - search uses bounded BM25F ranking rather than unbounded term counts;
 - the full replay and evaluation are deterministic and require no model call.
@@ -202,7 +203,7 @@ Each record includes:
 identity -> id, title, summary, tags
 accountability -> owner, updatedAt, validUntil
 evidence -> sources[]
-claims -> text + sourceIds[]
+claims -> text + sourceIds[] + optional typed operational assertion
 ```
 
 The canonical public fixtures are the Markdown documents in
@@ -223,9 +224,22 @@ assessment, and only the evidence records that affected that assessment.
 `npm run demo:sync` generates the public synthetic snapshot; CI fails if it
 drifts.
 
+Diagnostic snapshots use `context-layer-diagnostic/v2`. Version 2 binds each
+operational summary, receipt, and declared lane schedule to typed assertions on
+its evidence records. The operational claim must identify a declared source
+with the same observation time. Any mismatch in verdict, coverage, due time,
+lane, outcome, or observation time is rejected. Version 1 snapshots cannot
+prove that binding and are therefore rejected with an instruction to regenerate
+them; they are not silently upgraded.
+
+The typed assertion is authoritative for deterministic reconciliation. Record
+summary, content, and claim prose remain human-readable explanation; this lab
+does not pretend to infer whether arbitrary prose is semantically equivalent to
+the typed value.
+
 ## Evaluations
 
-`npm run eval` checks six validation and operational cases:
+`npm run eval` checks seven validation and operational cases:
 
 1. valid context
 2. stale context
@@ -233,11 +247,13 @@ drifts.
 4. unsupported claim
 5. malformed record
 6. a stale healthy dashboard contradicted by newer run receipts
+7. a scenario outcome that contradicts its source-linked typed assertion
 
 The record cases live in [`evals/cases.json`](evals/cases.json); the operational
 replay lives in
-[`evals/operational-health.json`](evals/operational-health.json). A case passes
-only when the observed result exactly matches the expected result.
+[`evals/operational-health.json`](evals/operational-health.json). Ordinary
+cases pass only when the observed result exactly matches the expected result;
+the adversarial case passes only when the expected rejection occurs.
 
 It then runs nine independent retrieval cases from
 [`evals/retrieval-cases.json`](evals/retrieval-cases.json). Validation asks
@@ -301,6 +317,10 @@ The lab has failed on the same boundaries it is designed to make visible:
 - Its first browser console trusted the assessment included in an imported
   snapshot. It now validates the shared strict schemas, recomputes the
   assessment from the scenario and evidence records, and rejects any mismatch.
+- Its first operational packet trusted decision-bearing scenario fields without
+  a machine-checkable evidence binding. Version 2 now binds summary, receipt,
+  and schedule fields to source-linked typed assertions and rejects legacy
+  snapshots that cannot prove the binding.
 
 The time precedence is explicit input, then declared snapshot time, then wall
 clock. Regression tests preserve both corrections. The point is not that the

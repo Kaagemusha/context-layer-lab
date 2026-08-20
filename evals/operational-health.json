@@ -62,5 +62,13 @@
     "notDueLaneIds": [
       "ai-radar"
     ]
-  }
+  },
+  "adversarialCases": [
+    {
+      "name": "typed receipt rejects a contradictory scenario outcome",
+      "receiptRecordId": "site-refresh-receipt",
+      "scenarioOutcome": "success",
+      "expectedErrorIncludes": "does not match its typed operational assertion"
+    }
+  ]
 }

@@ -12,7 +12,7 @@ import {
   type OperationalScenario,
 } from "./operational-health.js";
 
-export const DIAGNOSTIC_SNAPSHOT_FORMAT = "context-layer-diagnostic/v1";
+export const DIAGNOSTIC_SNAPSHOT_FORMAT = "context-layer-diagnostic/v2";
 
 export const diagnosticSnapshotSchema = z
   .object({
@@ -56,6 +56,17 @@ function canonicalJson(value: unknown): string {
 }
 
 export function verifyDiagnosticSnapshot(input: unknown): DiagnosticSnapshot {
+  if (
+    input !== null &&
+    typeof input === "object" &&
+    !Array.isArray(input) &&
+    "format" in input &&
+    input.format === "context-layer-diagnostic/v1"
+  ) {
+    throw new Error(
+      "Snapshot format context-layer-diagnostic/v1 is not evidence-bound; regenerate it as context-layer-diagnostic/v2.",
+    );
+  }
   const parsed = diagnosticSnapshotSchema.safeParse(input);
   if (!parsed.success) {
     const issue = parsed.error.issues[0];

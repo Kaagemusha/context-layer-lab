@@ -91,3 +91,34 @@ test("rejects duplicate record IDs before rendering", () => {
     /Duplicate record ID/,
   );
 });
+
+test("rejects legacy v1 snapshots with an actionable migration message", () => {
+  const snapshot = buildDiagnosticSnapshot(fixture.scenario, records);
+  assert.throws(
+    () =>
+      verifyDiagnosticSnapshot({
+        ...snapshot,
+        format: "context-layer-diagnostic/v1",
+      }),
+    /v1 is not evidence-bound; regenerate it as context-layer-diagnostic\/v2/,
+  );
+});
+
+test("rejects scenario tampering that contradicts typed evidence", () => {
+  const snapshot = buildDiagnosticSnapshot(fixture.scenario, records);
+  assert.throws(
+    () =>
+      verifyDiagnosticSnapshot({
+        ...snapshot,
+        scenario: {
+          ...snapshot.scenario,
+          receipts: snapshot.scenario.receipts.map((receipt) =>
+            receipt.recordId === "site-refresh-receipt"
+              ? { ...receipt, outcome: "success" }
+              : receipt,
+          ),
+        },
+      }),
+    /does not match its typed operational assertion/,
+  );
+});
