@@ -52,6 +52,7 @@ export const operationalScenarioSchema = z
     });
 
     const receiptRecordIds = new Set<string>();
+    const receiptTimesByLane = new Map<string, Set<string>>();
     scenario.receipts.forEach((receipt, index) => {
       if (receiptRecordIds.has(receipt.recordId)) {
         context.addIssue({
@@ -61,6 +62,17 @@ export const operationalScenarioSchema = z
         });
       }
       receiptRecordIds.add(receipt.recordId);
+
+      const observedTimes = receiptTimesByLane.get(receipt.laneId) ?? new Set();
+      if (observedTimes.has(receipt.observedAt)) {
+        context.addIssue({
+          code: "custom",
+          message: `Duplicate receipt observation for lane "${receipt.laneId}" at ${receipt.observedAt}.`,
+          path: ["receipts", index, "observedAt"],
+        });
+      }
+      observedTimes.add(receipt.observedAt);
+      receiptTimesByLane.set(receipt.laneId, observedTimes);
     });
   });
 
