@@ -168,6 +168,28 @@ test("rejects duplicate receipt record IDs", () => {
   );
 });
 
+test("rejects order-dependent receipt timestamp ties", () => {
+  const original = scenario.scenario.receipts[0];
+  assert.throws(
+    () =>
+      assessOperationalHealth(
+        {
+          ...scenario.scenario,
+          receipts: [
+            ...scenario.scenario.receipts,
+            {
+              ...original,
+              recordId: "morning-brief-conflict",
+              outcome: "failed",
+            },
+          ],
+        },
+        records,
+      ),
+    /Duplicate receipt observation/,
+  );
+});
+
 test("rejects duplicate context record IDs", () => {
   assert.throws(
     () =>
