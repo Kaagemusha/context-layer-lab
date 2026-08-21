@@ -39,6 +39,14 @@ export const operationalScenarioSchema = z
   })
   .strict()
   .superRefine((scenario, context) => {
+    if (new Date(scenario.summary.observedAt) > new Date(scenario.asOf)) {
+      context.addIssue({
+        code: "custom",
+        message: "Summary observation cannot postdate the diagnostic asOf time.",
+        path: ["summary", "observedAt"],
+      });
+    }
+
     const laneIds = new Set<string>();
     scenario.lanes.forEach((lane, index) => {
       if (laneIds.has(lane.id)) {
