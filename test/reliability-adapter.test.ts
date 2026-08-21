@@ -167,6 +167,20 @@ test("not-yet-due and awaiting-review lanes remain accounted coverage", () => {
   assert.match(snapshot.records[1]?.content ?? "", /3\/3 lanes are accounted for/);
 });
 
+test("legacy patrols without newer explicit categories preserve prior coverage", () => {
+  const legacyPatrol: Record<string, unknown> = { ...baseRollup.patrol };
+  delete legacyPatrol.recovered_late;
+  delete legacyPatrol.weekly_outcome_advisory;
+  const snapshot = adaptReliabilityRollup(
+    { ...baseRollup, patrol: legacyPatrol },
+    "https://example.invalid/vault/",
+  );
+
+  assert.equal(snapshot.assessment.governedVerdict, "healthy");
+  assert.equal(snapshot.assessment.laneAssessments[0]?.outcome, "success");
+  assert.match(snapshot.records[1]?.content ?? "", /3\/3 lanes are accounted for/);
+});
+
 test("recovered-late lanes are accounted without becoming unknown", () => {
   const snapshot = adaptReliabilityRollup(
     {
