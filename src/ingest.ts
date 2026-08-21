@@ -2,12 +2,13 @@ import { createHash } from "node:crypto";
 import { readFile, readdir } from "node:fs/promises";
 
 import {
+  contextRecordBaseSchema,
   contextRecordSchema,
   validateRecord,
   type ContextRecord,
 } from "./context.js";
 
-const metadataSchema = contextRecordSchema.omit({ content: true });
+const metadataSchema = contextRecordBaseSchema.omit({ content: true });
 
 export type SourceDocument = {
   sourcePath: string;

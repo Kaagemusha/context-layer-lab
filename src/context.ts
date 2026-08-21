@@ -54,7 +54,7 @@ export const claimSchema = z
   })
   .strict();
 
-export const contextRecordSchema = z
+export const contextRecordBaseSchema = z
   .object({
     id: z.string().min(1),
     title: z.string().min(1),
@@ -68,6 +68,21 @@ export const contextRecordSchema = z
     claims: z.array(claimSchema),
   })
   .strict();
+
+export const contextRecordSchema = contextRecordBaseSchema
+  .superRefine((record, context) => {
+    const sourceIds = new Set<string>();
+    record.sources.forEach((source, index) => {
+      if (sourceIds.has(source.id)) {
+        context.addIssue({
+          code: "custom",
+          message: `Duplicate source ID "${source.id}".`,
+          path: ["sources", index, "id"],
+        });
+      }
+      sourceIds.add(source.id);
+    });
+  });
 
 export type ContextRecord = z.infer<typeof contextRecordSchema>;
 

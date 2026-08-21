@@ -92,6 +92,34 @@ test("rejects duplicate record IDs before rendering", () => {
   );
 });
 
+test("rejects ambiguous source IDs before evidence reconciliation", () => {
+  const snapshot = buildDiagnosticSnapshot(fixture.scenario, records);
+  const summaryRecordId = snapshot.scenario.summary.recordId;
+
+  assert.throws(
+    () =>
+      verifyDiagnosticSnapshot({
+        ...snapshot,
+        records: snapshot.records.map((record) =>
+          record.id === summaryRecordId
+            ? {
+                ...record,
+                sources: [
+                  record.sources[0],
+                  {
+                    ...record.sources[0],
+                    label: "Different evidence with the same identifier",
+                    url: "https://example.invalid/ambiguous-evidence",
+                  },
+                ],
+              }
+            : record,
+        ),
+      }),
+    /Duplicate source ID/,
+  );
+});
+
 test("rejects legacy v1 snapshots with an actionable migration message", () => {
   const snapshot = buildDiagnosticSnapshot(fixture.scenario, records);
   assert.throws(
