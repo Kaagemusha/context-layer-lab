@@ -237,6 +237,23 @@ summary, content, and claim prose remain human-readable explanation; this lab
 does not pretend to infer whether arbitrary prose is semantically equivalent to
 the typed value.
 
+### Operational invariant matrix
+
+The reconciler treats ambiguity as invalid input rather than choosing an
+answer from array order or future evidence.
+
+| Boundary | Invariant | Failure behavior | Executable proof |
+|---|---|---|---|
+| Identity | Source IDs are unique within a record; lane IDs, receipt record IDs, and context record IDs are unique within an assessment. | Reject before reconciliation. | `context.test.ts`, `ingest.test.ts`, `operational-health.test.ts` |
+| References | Every claim source exists, every receipt names a declared lane, and every decision-bearing record exists. | Reject as unsupported, unknown, or missing. | `context.test.ts`, `operational-health.test.ts` |
+| Evidence binding | Summary, schedule, receipt, outcome, and observation time exactly match one source-linked typed assertion. | Reject the scenario/record mismatch. | `operational-health.test.ts`, `diagnostic-snapshot.test.ts` |
+| Time | A summary cannot postdate `asOf`; later receipts may remain in a historical packet but cannot affect its decision. | Reject a future summary; ignore later receipts for that point-in-time verdict. | `operational-health.test.ts` boundary and future-receipt tests |
+| Ordering | Permuting valid receipts or records preserves the decision; same-lane timestamp ties are ambiguous. | Preserve the assessment or reject the tie. | `operational-health.test.ts` permutation and tie tests |
+| Quality | Missing, stale, degraded, failed, or preserved-local evidence cannot establish a healthy due lane. | Surface `attention` or `missing`; never silently promote. | `operational-health.test.ts`, `operator-brief.test.ts` |
+
+These are zero-model CI constraints. New operational behavior should extend
+this matrix only when a distinct decision boundary is introduced.
+
 ## Evaluations
 
 `npm run eval` checks seven validation and operational cases:

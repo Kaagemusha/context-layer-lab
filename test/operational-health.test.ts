@@ -6,6 +6,7 @@ import {
   assessOperationalHealth,
   assessmentsConflict,
   selectedEvidenceRecordIds,
+  type OperationalAssessment,
 } from "../src/operational-health.js";
 import type { OperationalAssertion } from "../src/context.js";
 
@@ -55,6 +56,29 @@ function bindRecord(
   return cloned;
 }
 
+function permutations<T>(items: T[]): T[][] {
+  if (items.length > 8) {
+    throw new Error("Permutation invariant fixture exceeds the bounded size of 8");
+  }
+  if (items.length <= 1) return [items];
+  return items.flatMap((item, index) =>
+    permutations([...items.slice(0, index), ...items.slice(index + 1)]).map(
+      (rest) => [item, ...rest],
+    ),
+  );
+}
+
+function decisionProjection(assessment: OperationalAssessment) {
+  return {
+    naiveVerdict: assessment.naiveVerdict,
+    governedVerdict: assessment.governedVerdict,
+    summaryStale: assessment.summaryStale,
+    decisionPrevented: assessment.decisionPrevented,
+    newerEvidenceRecordIds: [...assessment.newerEvidenceRecordIds].sort(),
+    laneAssessments: assessment.laneAssessments,
+  };
+}
+
 test("newer run receipts override a stale healthy summary", () => {
   const result = assessOperationalHealth(scenario.scenario, records);
   assert.equal(result.naiveVerdict, "healthy");
@@ -79,7 +103,16 @@ test("not-yet-due lanes do not create false failures", () => {
   );
 });
 
-test("rejects a summary observed after the diagnostic time", () => {
+test("summary observation respects the diagnostic time boundary", () => {
+  assert.doesNotThrow(() =>
+    assessOperationalHealth(
+      {
+        ...scenario.scenario,
+        asOf: scenario.scenario.summary.observedAt,
+      },
+      records,
+    ),
+  );
   assert.throws(
     () =>
       assessOperationalHealth(
@@ -90,6 +123,82 @@ test("rejects a summary observed after the diagnostic time", () => {
         records,
       ),
     /Summary observation cannot postdate the diagnostic asOf time/,
+  );
+});
+
+test("receipt permutations preserve the operational decision", () => {
+  const expected = decisionProjection(
+    assessOperationalHealth(scenario.scenario, records),
+  );
+
+  for (const receipts of permutations(scenario.scenario.receipts)) {
+    const observed = decisionProjection(
+      assessOperationalHealth(
+        { ...scenario.scenario, receipts },
+        records,
+      ),
+    );
+    assert.deepEqual(observed, expected);
+  }
+});
+
+test("record permutations preserve the complete assessment", () => {
+  const expected = assessOperationalHealth(scenario.scenario, records);
+
+  for (const recordOrder of permutations(records)) {
+    assert.deepEqual(
+      assessOperationalHealth(scenario.scenario, recordOrder),
+      expected,
+    );
+  }
+});
+
+test("future receipts cannot alter a point-in-time decision", () => {
+  const originalReceipt = scenario.scenario.receipts[0];
+  const originalRecord = records.find(
+    (record) => record.id === originalReceipt.recordId,
+  );
+  if (!originalRecord?.claims[0]) throw new Error("Fixture record missing");
+
+  const futureObservedAt = "2026-07-28T09:20:00Z";
+  const futureRecord = structuredClone(originalRecord);
+  futureRecord.id = "morning-brief-future-receipt";
+  futureRecord.updatedAt = futureObservedAt;
+  const futureClaim = futureRecord.claims[0];
+  if (!futureClaim) throw new Error("Fixture claim missing");
+  futureClaim.operational = {
+    kind: "receipt",
+    laneId: originalReceipt.laneId,
+    observedAt: futureObservedAt,
+    outcome: "failed",
+  };
+  const source = futureRecord.sources.find((candidate) =>
+    futureClaim.sourceIds.includes(candidate.id),
+  );
+  if (!source) throw new Error("Fixture source missing");
+  source.observedAt = futureObservedAt;
+
+  const observed = assessOperationalHealth(
+    {
+      ...scenario.scenario,
+      receipts: [
+        ...scenario.scenario.receipts,
+        {
+          recordId: futureRecord.id,
+          laneId: originalReceipt.laneId,
+          observedAt: futureObservedAt,
+          outcome: "failed",
+        },
+      ],
+    },
+    [...records, futureRecord],
+  );
+
+  assert.equal(observed.evidenceQuality[futureRecord.id]?.state, "valid");
+  assert.ok(!observed.newerEvidenceRecordIds.includes(futureRecord.id));
+  assert.deepEqual(
+    decisionProjection(observed),
+    decisionProjection(assessOperationalHealth(scenario.scenario, records)),
   );
 });
 
