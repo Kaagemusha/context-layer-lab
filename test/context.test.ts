@@ -63,6 +63,32 @@ test("rejects claims that reference undeclared sources", () => {
   assert.equal(result.issues[0]?.code, "unsupported_claim");
 });
 
+test("rejects ambiguous duplicate source IDs", () => {
+  const result = validateRecord(
+    {
+      ...currentRecord,
+      sources: [
+        currentRecord.sources[0],
+        {
+          ...currentRecord.sources[0],
+          label: "Different document with the same identifier",
+          url: "https://example.invalid/different-runbook",
+        },
+      ],
+    },
+    asOf,
+  );
+
+  assert.equal(result.valid, false);
+  assert.equal(result.state, "invalid");
+  assert.ok(
+    result.issues.some(
+      (issue) =>
+        issue.code === "malformed_record" && issue.path === "sources.1.id",
+    ),
+  );
+});
+
 test("rejects malformed records with actionable paths", () => {
   const result = validateRecord({ id: "missing-fields" }, asOf);
   assert.equal(result.valid, false);
