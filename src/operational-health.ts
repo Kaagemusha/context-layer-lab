@@ -37,7 +37,32 @@ export const operationalScenarioSchema = z
     summary: summarySchema,
     receipts: z.array(receiptSchema),
   })
-  .strict();
+  .strict()
+  .superRefine((scenario, context) => {
+    const laneIds = new Set<string>();
+    scenario.lanes.forEach((lane, index) => {
+      if (laneIds.has(lane.id)) {
+        context.addIssue({
+          code: "custom",
+          message: `Duplicate lane ID "${lane.id}".`,
+          path: ["lanes", index, "id"],
+        });
+      }
+      laneIds.add(lane.id);
+    });
+
+    const receiptRecordIds = new Set<string>();
+    scenario.receipts.forEach((receipt, index) => {
+      if (receiptRecordIds.has(receipt.recordId)) {
+        context.addIssue({
+          code: "custom",
+          message: `Duplicate receipt record ID "${receipt.recordId}".`,
+          path: ["receipts", index, "recordId"],
+        });
+      }
+      receiptRecordIds.add(receipt.recordId);
+    });
+  });
 
 export type OperationalScenario = z.infer<typeof operationalScenarioSchema>;
 
@@ -164,7 +189,11 @@ export function assessOperationalHealth(
 
   for (const inputRecord of records) {
     const parsed = contextRecordSchema.safeParse(inputRecord);
-    if (parsed.success) parsedRecords.set(parsed.data.id, parsed.data);
+    if (!parsed.success) continue;
+    if (parsedRecords.has(parsed.data.id)) {
+      throw new Error(`Duplicate context record ID "${parsed.data.id}".`);
+    }
+    parsedRecords.set(parsed.data.id, parsed.data);
   }
 
   const evidenceIds = [

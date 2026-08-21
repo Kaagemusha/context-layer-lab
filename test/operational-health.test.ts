@@ -121,7 +121,7 @@ test("unknown receipt lanes fail closed", () => {
           receipts: [
             ...scenario.scenario.receipts,
             {
-              recordId: "morning-brief-receipt",
+              recordId: "unknown-lane-receipt",
               laneId: "unknown-lane",
               observedAt: scenario.scenario.asOf,
               outcome: "success",
@@ -131,6 +131,51 @@ test("unknown receipt lanes fail closed", () => {
         records,
       ),
     /Receipt references unknown lane "unknown-lane"/,
+  );
+});
+
+test("rejects duplicate operational lane IDs", () => {
+  assert.throws(
+    () =>
+      assessOperationalHealth(
+        {
+          ...scenario.scenario,
+          lanes: [
+            ...scenario.scenario.lanes,
+            scenario.scenario.lanes[0],
+          ],
+        },
+        records,
+      ),
+    /Duplicate lane ID/,
+  );
+});
+
+test("rejects duplicate receipt record IDs", () => {
+  assert.throws(
+    () =>
+      assessOperationalHealth(
+        {
+          ...scenario.scenario,
+          receipts: [
+            ...scenario.scenario.receipts,
+            scenario.scenario.receipts[0],
+          ],
+        },
+        records,
+      ),
+    /Duplicate receipt record ID/,
+  );
+});
+
+test("rejects duplicate context record IDs", () => {
+  assert.throws(
+    () =>
+      assessOperationalHealth(scenario.scenario, [
+        ...records,
+        records[0],
+      ]),
+    /Duplicate context record ID "fleet-health-rollup"/,
   );
 });
 
