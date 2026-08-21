@@ -15,8 +15,10 @@ const baseRollup = {
     host: "host-a",
     checked: 3,
     ok: 2,
+    recovered_late: 0,
     pending: 0,
     observed_pending_review: 1,
+    weekly_outcome_advisory: 0,
     actionable: 0,
     fresh: true,
   },
@@ -163,6 +165,62 @@ test("not-yet-due and awaiting-review lanes remain accounted coverage", () => {
 
   assert.equal(snapshot.assessment.governedVerdict, "healthy");
   assert.match(snapshot.records[1]?.content ?? "", /3\/3 lanes are accounted for/);
+});
+
+test("legacy patrols without newer explicit categories preserve prior coverage", () => {
+  const legacyPatrol: Record<string, unknown> = { ...baseRollup.patrol };
+  delete legacyPatrol.recovered_late;
+  delete legacyPatrol.weekly_outcome_advisory;
+  const snapshot = adaptReliabilityRollup(
+    { ...baseRollup, patrol: legacyPatrol },
+    "https://example.invalid/vault/",
+  );
+
+  assert.equal(snapshot.assessment.governedVerdict, "healthy");
+  assert.equal(snapshot.assessment.laneAssessments[0]?.outcome, "success");
+  assert.match(snapshot.records[1]?.content ?? "", /3\/3 lanes are accounted for/);
+});
+
+test("recovered-late lanes are accounted without becoming unknown", () => {
+  const snapshot = adaptReliabilityRollup(
+    {
+      ...baseRollup,
+      patrol: {
+        ...baseRollup.patrol,
+        checked: 11,
+        ok: 8,
+        recovered_late: 3,
+        observed_pending_review: 0,
+      },
+    },
+    "https://example.invalid/vault/",
+  );
+
+  assert.equal(snapshot.assessment.governedVerdict, "healthy");
+  assert.equal(snapshot.assessment.laneAssessments[0]?.outcome, "success");
+  assert.match(snapshot.records[1]?.content ?? "", /11\/11 lanes are accounted for/);
+  assert.match(snapshot.records[1]?.content ?? "", /3 recovered late/);
+});
+
+test("weekly outcome advisories are accounted but retain attention", () => {
+  const snapshot = adaptReliabilityRollup(
+    {
+      ...baseRollup,
+      patrol: {
+        ...baseRollup.patrol,
+        checked: 3,
+        ok: 2,
+        observed_pending_review: 0,
+        weekly_outcome_advisory: 1,
+      },
+    },
+    "https://example.invalid/vault/",
+  );
+
+  assert.equal(snapshot.assessment.governedVerdict, "attention");
+  assert.equal(snapshot.assessment.laneAssessments[0]?.outcome, "preserved_local");
+  assert.match(snapshot.records[1]?.content ?? "", /3\/3 lanes are accounted for/);
+  assert.match(snapshot.records[1]?.content ?? "", /1 weekly outcome advisory/);
 });
 
 test("stale patrol evidence says that it is stale", () => {

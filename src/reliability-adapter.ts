@@ -18,8 +18,10 @@ const patrolSchema = z
     host: z.string().min(1).optional(),
     checked: z.number().int().nonnegative().optional(),
     ok: z.number().int().nonnegative().optional(),
+    recovered_late: z.number().int().nonnegative().optional(),
     pending: z.number().int().nonnegative().optional(),
     observed_pending_review: z.number().int().nonnegative().optional(),
+    weekly_outcome_advisory: z.number().int().nonnegative().optional(),
     actionable: z.number().nullable().optional(),
     fresh: z.boolean(),
   })
@@ -73,8 +75,10 @@ export type ReliabilityCoverage = {
   expected: number | null;
   accountedFor: number;
   verified: number;
+  recoveredLate: number;
   pending: number;
   awaitingReview: number;
+  weeklyOutcomeAdvisory: number;
   actionable: number;
   unknown: number | null;
   complete: boolean;
@@ -154,8 +158,10 @@ export function reliabilityCoverage(
 ): ReliabilityCoverage {
   const expected = patrol?.checked ?? null;
   const verified = patrol?.ok ?? 0;
+  const recoveredLate = patrol?.recovered_late ?? 0;
   const pending = patrol?.pending ?? 0;
   const awaitingReview = patrol?.observed_pending_review ?? 0;
+  const weeklyOutcomeAdvisory = patrol?.weekly_outcome_advisory ?? 0;
   const actionable = patrol?.actionable ?? 0;
   const countsKnown =
     patrol !== null &&
@@ -164,15 +170,23 @@ export function reliabilityCoverage(
     patrol.pending !== undefined &&
     patrol.observed_pending_review !== undefined &&
     typeof patrol.actionable === "number";
-  const accountedFor = verified + pending + awaitingReview + actionable;
+  const accountedFor =
+    verified +
+    recoveredLate +
+    pending +
+    awaitingReview +
+    weeklyOutcomeAdvisory +
+    actionable;
   const unknown = expected === null ? null : Math.max(0, expected - accountedFor);
 
   return {
     expected,
     accountedFor,
     verified,
+    recoveredLate,
     pending,
     awaitingReview,
+    weeklyOutcomeAdvisory,
     actionable,
     unknown,
     complete: countsKnown && accountedFor === expected,
@@ -242,13 +256,14 @@ export function adaptReliabilityRollup(
       rollup.patrol.state === "PARSED" &&
       rollup.patrol.fresh &&
       coverage.complete &&
+      coverage.weeklyOutcomeAdvisory === 0 &&
       actionable === 0
         ? "success"
         : typeof actionable === "number" && actionable > 0
           ? "failed"
           : "preserved_local";
     const coverageText = coverage.complete
-      ? `${coverage.accountedFor}/${coverage.expected} lanes are accounted for: ${coverage.verified} verified, ${coverage.pending} pending, ${coverage.awaitingReview} awaiting review, and ${coverage.actionable} actionable.`
+      ? `${coverage.accountedFor}/${coverage.expected} lanes are accounted for: ${coverage.verified} verified, ${coverage.recoveredLate} recovered late, ${coverage.pending} pending, ${coverage.awaitingReview} awaiting review, ${coverage.weeklyOutcomeAdvisory} weekly outcome advisory, and ${coverage.actionable} actionable.`
       : coverage.expected === null
         ? "The patrol does not declare expected-lane coverage."
         : `The patrol accounts for ${coverage.accountedFor}/${coverage.expected} expected lanes; ${coverage.unknown ?? 0} are unknown.`;
