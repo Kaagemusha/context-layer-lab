@@ -79,6 +79,20 @@ test("not-yet-due lanes do not create false failures", () => {
   );
 });
 
+test("rejects a summary observed after the diagnostic time", () => {
+  assert.throws(
+    () =>
+      assessOperationalHealth(
+        {
+          ...scenario.scenario,
+          asOf: "2026-07-28T07:00:00Z",
+        },
+        records,
+      ),
+    /Summary observation cannot postdate the diagnostic asOf time/,
+  );
+});
+
 test("missing evidence records fail closed", () => {
   assert.throws(
     () =>
