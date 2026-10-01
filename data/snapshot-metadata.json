@@ -1,0 +1,12 @@
+{
+  "snapshotAsOf": "2026-07-28T09:10:00Z",
+  "ageThresholdDays": 45,
+  "intentionalStaleRecordIds": [
+    "daily-status-dashboard",
+    "legacy-vendor-review"
+  ],
+  "retention": {
+    "until": "2027-03-31T00:00:00Z",
+    "reason": "Synthetic sample. Every tool, eval and the demo read it at its pinned snapshot time, so its wall-clock age changes no result."
+  }
+}

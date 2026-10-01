@@ -1,0 +1,275 @@
+[
+  {
+    "id": "daily-status-dashboard",
+    "title": "Daily Status Dashboard",
+    "summary": "The 07:30 dashboard snapshot reports every scheduled job healthy.",
+    "content": "The dashboard was accurate when generated. Its freshness window ends when the first scheduled job becomes due.",
+    "tags": [
+      "automation-health",
+      "summary",
+      "dashboard"
+    ],
+    "owner": "Reliability Operations",
+    "updatedAt": "2026-07-28T07:30:00Z",
+    "validUntil": "2026-07-28T07:55:00Z",
+    "sources": [
+      {
+        "id": "dashboard-snapshot-0730",
+        "label": "Dashboard snapshot at 07:30",
+        "url": "https://example.invalid/operations/dashboard-0730",
+        "observedAt": "2026-07-28T07:30:00Z"
+      }
+    ],
+    "claims": [
+      {
+        "text": "All scheduled jobs are healthy.",
+        "sourceIds": [
+          "dashboard-snapshot-0730"
+        ],
+        "operational": {
+          "kind": "summary",
+          "observedAt": "2026-07-28T07:30:00Z",
+          "verdict": "healthy",
+          "lanes": [
+            {
+              "id": "nightly-export",
+              "label": "Nightly Export",
+              "dueAt": "2026-07-28T07:55:00Z"
+            },
+            {
+              "id": "docs-build",
+              "label": "Docs Build",
+              "dueAt": "2026-07-28T08:15:00Z"
+            },
+            {
+              "id": "weekly-report",
+              "label": "Weekly Report",
+              "dueAt": "2026-07-28T08:30:00Z"
+            },
+            {
+              "id": "data-sync",
+              "label": "Data Sync",
+              "dueAt": "2026-07-28T17:30:00Z"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "docs-build-receipt",
+    "title": "Docs Build Run Receipt",
+    "summary": "The scheduled docs build stopped before deployment because its pre-deploy validation failed.",
+    "content": "The prior public version remains unchanged. The failed run is newer and more specific than the earlier status summary.",
+    "tags": [
+      "automation-health",
+      "run-receipt",
+      "docs-build"
+    ],
+    "owner": "Platform Operations",
+    "updatedAt": "2026-07-28T08:40:00Z",
+    "validUntil": "2026-07-29T08:40:00Z",
+    "sources": [
+      {
+        "id": "docs-run-0840",
+        "label": "Docs Build terminal receipt",
+        "url": "https://example.invalid/operations/docs-run-0840",
+        "observedAt": "2026-07-28T08:40:00Z"
+      }
+    ],
+    "claims": [
+      {
+        "text": "The Docs Build run failed before deployment.",
+        "sourceIds": [
+          "docs-run-0840"
+        ],
+        "operational": {
+          "kind": "receipt",
+          "laneId": "docs-build",
+          "observedAt": "2026-07-28T08:40:00Z",
+          "outcome": "failed"
+        }
+      }
+    ]
+  },
+  {
+    "id": "nightly-export-receipt",
+    "title": "Nightly Export Run Receipt",
+    "summary": "The scheduled nightly export completed and delivered successfully.",
+    "content": "The terminal receipt records successful generation and delivery after the job's scheduled window opened.",
+    "tags": [
+      "automation-health",
+      "run-receipt",
+      "nightly-export"
+    ],
+    "owner": "Data Operations",
+    "updatedAt": "2026-07-28T08:02:00Z",
+    "validUntil": "2026-07-29T08:02:00Z",
+    "sources": [
+      {
+        "id": "export-run-0802",
+        "label": "Nightly Export terminal receipt",
+        "url": "https://example.invalid/operations/export-run-0802",
+        "observedAt": "2026-07-28T08:02:00Z"
+      }
+    ],
+    "claims": [
+      {
+        "text": "The Nightly Export run completed successfully.",
+        "sourceIds": [
+          "export-run-0802"
+        ],
+        "operational": {
+          "kind": "receipt",
+          "laneId": "nightly-export",
+          "observedAt": "2026-07-28T08:02:00Z",
+          "outcome": "success"
+        }
+      }
+    ]
+  },
+  {
+    "id": "weekly-report-receipt",
+    "title": "Weekly Report Run Receipt",
+    "summary": "The report run completed, but its output remains preserved locally rather than published.",
+    "content": "Work exists, but the terminal state is not equivalent to successful publication. The job needs attention without discarding its output.",
+    "tags": [
+      "automation-health",
+      "run-receipt",
+      "weekly-report"
+    ],
+    "owner": "Analytics Operations",
+    "updatedAt": "2026-07-28T09:05:00Z",
+    "validUntil": "2026-07-29T09:05:00Z",
+    "sources": [
+      {
+        "id": "report-run-0905",
+        "label": "Weekly Report terminal receipt",
+        "url": "https://example.invalid/operations/report-run-0905",
+        "observedAt": "2026-07-28T09:05:00Z"
+      }
+    ],
+    "claims": [
+      {
+        "text": "The Weekly Report output is preserved locally and is not published.",
+        "sourceIds": [
+          "report-run-0905"
+        ],
+        "operational": {
+          "kind": "receipt",
+          "laneId": "weekly-report",
+          "observedAt": "2026-07-28T09:05:00Z",
+          "outcome": "preserved_local"
+        }
+      }
+    ]
+  },
+  {
+    "id": "launch-readiness",
+    "title": "Northstar Launch Readiness",
+    "summary": "Current owners, decision gates, and rollback criteria for the Northstar launch.",
+    "content": "The launch is in controlled rollout. Product owns the go/no-go decision, Support owns the escalation brief, and Engineering owns rollback execution.",
+    "tags": [
+      "launch",
+      "ownership",
+      "operations"
+    ],
+    "owner": "Program Operations",
+    "updatedAt": "2026-07-20T14:30:00Z",
+    "validUntil": "2026-08-15T23:59:59Z",
+    "sources": [
+      {
+        "id": "decision-log-42",
+        "label": "Decision log 42",
+        "url": "https://example.invalid/northstar/decision-42",
+        "observedAt": "2026-07-20T14:00:00Z"
+      },
+      {
+        "id": "runbook-v3",
+        "label": "Launch runbook v3",
+        "url": "https://example.invalid/northstar/runbook-v3",
+        "observedAt": "2026-07-19T18:00:00Z"
+      }
+    ],
+    "claims": [
+      {
+        "text": "Northstar is in controlled rollout.",
+        "sourceIds": [
+          "decision-log-42"
+        ]
+      },
+      {
+        "text": "Engineering owns rollback execution.",
+        "sourceIds": [
+          "runbook-v3"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "support-escalation",
+    "title": "Support Escalation Path",
+    "summary": "The current severity definitions and escalation owners for customer-impacting incidents.",
+    "content": "Severity 1 incidents page the incident commander and customer lead immediately. Severity 2 incidents enter the hourly triage queue.",
+    "tags": [
+      "support",
+      "incident",
+      "ownership"
+    ],
+    "owner": "Customer Operations",
+    "updatedAt": "2026-07-18T16:00:00Z",
+    "validUntil": "2026-09-30T23:59:59Z",
+    "sources": [
+      {
+        "id": "support-policy-7",
+        "label": "Support policy 7",
+        "url": "https://example.invalid/support/policy-7",
+        "observedAt": "2026-07-18T15:30:00Z"
+      }
+    ],
+    "claims": [
+      {
+        "text": "Severity 1 incidents page the incident commander and customer lead.",
+        "sourceIds": [
+          "support-policy-7"
+        ]
+      },
+      {
+        "text": "Severity 2 incidents enter hourly triage.",
+        "sourceIds": [
+          "support-policy-7"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "legacy-vendor-review",
+    "title": "Legacy Vendor Review",
+    "summary": "An expired assessment retained for historical comparison.",
+    "content": "The prior review approved the vendor for a limited pilot. Its approval window has expired and must not be treated as current authorization.",
+    "tags": [
+      "vendor",
+      "risk",
+      "historical"
+    ],
+    "owner": "Risk Operations",
+    "updatedAt": "2026-05-15T12:00:00Z",
+    "validUntil": "2026-06-30T23:59:59Z",
+    "sources": [
+      {
+        "id": "risk-review-18",
+        "label": "Risk review 18",
+        "url": "https://example.invalid/risk/review-18",
+        "observedAt": "2026-05-15T11:00:00Z"
+      }
+    ],
+    "claims": [
+      {
+        "text": "The vendor was approved for a limited pilot.",
+        "sourceIds": [
+          "risk-review-18"
+        ]
+      }
+    ]
+  }
+]

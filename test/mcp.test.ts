@@ -1,0 +1,77 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+import test from "node:test";
+
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+
+test("an MCP client can discover and call the stdio server", async () => {
+  const serverPath = fileURLToPath(new URL("../src/server.js", import.meta.url));
+  const transport = new StdioClientTransport({
+    command: process.execPath,
+    args: [serverPath],
+  });
+  const client = new Client({
+    name: "context-layer-lab-test",
+    version: "0.1.0",
+  });
+
+  try {
+    await client.connect(transport);
+    const packageJson = JSON.parse(
+      await readFile(new URL("../../package.json", import.meta.url), "utf8"),
+    );
+    assert.equal(client.getServerVersion()?.version, packageJson.version);
+
+    const listed = await client.listTools();
+    assert.deepEqual(
+      listed.tools.map((tool) => tool.name).sort(),
+      [
+        "explain_source",
+        "inspect_ingestion",
+        "search_context",
+        "validate_record",
+      ],
+    );
+
+    const response = await client.callTool({
+      name: "search_context",
+      arguments: {
+        query: "launch",
+        asOf: "2026-07-28T12:00:00Z",
+      },
+    });
+    assert.equal(response.isError, false);
+    assert.match(JSON.stringify(response.content), /launch-readiness/);
+
+    const currentReceipt = await client.callTool({
+      name: "search_context",
+      arguments: { query: "build" },
+    });
+    assert.equal(currentReceipt.isError, false);
+    assert.match(
+      JSON.stringify(currentReceipt.content),
+      /docs-build-receipt[\s\S]*\\"state\\": \\"valid\\"/,
+    );
+
+    const staleHistory = await client.callTool({
+      name: "search_context",
+      arguments: { query: "vendor" },
+    });
+    assert.equal(staleHistory.isError, false);
+    assert.match(
+      JSON.stringify(staleHistory.content),
+      /legacy-vendor-review[\s\S]*\\"state\\": \\"degraded\\"/,
+    );
+
+    const receipt = await client.callTool({
+      name: "inspect_ingestion",
+      arguments: { recordId: "launch-readiness" },
+    });
+    assert.equal(receipt.isError, false);
+    assert.match(JSON.stringify(receipt.content), /01-northstar-launch\.md/);
+  } finally {
+    await client.close();
+  }
+});

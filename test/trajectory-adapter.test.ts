@@ -1,0 +1,87 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+
+import { adaptTrajectoryRuns } from "../src/trajectory-adapter.js";
+
+const input = JSON.parse(
+  await readFile(
+    new URL(
+      "../../examples/trajectory-adapter-input.json",
+      import.meta.url,
+    ),
+    "utf8",
+  ),
+);
+
+test("adapts run records into a governed snapshot", () => {
+  const snapshot = adaptTrajectoryRuns(input);
+
+  assert.equal(snapshot.assessment.governedVerdict, "attention");
+  assert.equal(snapshot.assessment.decisionPrevented, true);
+  assert.equal(snapshot.records.length, 3);
+  assert.deepEqual(
+    snapshot.assessment.laneAssessments.map((lane) => [
+      lane.id,
+      lane.outcome,
+      lane.state,
+    ]),
+    [
+      ["export", "success", "healthy"],
+      ["docs", "preserved_local", "attention"],
+    ],
+  );
+});
+
+test("rejects runs that reference an undeclared lane", () => {
+  assert.throws(
+    () =>
+      adaptTrajectoryRuns({
+        ...input,
+        runs: [
+          {
+            ...input.runs[0],
+            task: { ...input.runs[0].task, lane: "missing" },
+          },
+        ],
+      }),
+    /references unknown lane/,
+  );
+});
+
+test("rejects duplicate run IDs", () => {
+  assert.throws(
+    () =>
+      adaptTrajectoryRuns({
+        ...input,
+        runs: [input.runs[0], input.runs[0]],
+      }),
+    /unique run IDs/,
+  );
+});
+
+test("rejects a run ID reserved for the summary record", () => {
+  assert.throws(
+    () =>
+      adaptTrajectoryRuns({
+        ...input,
+        runs: [{ ...input.runs[0], run_id: "trajectory-summary" }],
+      }),
+    /run ID "trajectory-summary" is reserved/,
+  );
+});
+
+test("appends run IDs to source base URLs without a trailing slash", () => {
+  const snapshot = adaptTrajectoryRuns({
+    ...input,
+    sourceBaseUrl: "https://example.invalid/trajectory/runs",
+  });
+  const run = snapshot.records.find(
+    (record) => record.id === input.runs[0].run_id,
+  );
+
+  assert.equal(
+    run?.sources[0]?.url,
+    `https://example.invalid/trajectory/runs/${input.runs[0].run_id}`,
+  );
+});

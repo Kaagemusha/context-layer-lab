@@ -1,0 +1,73 @@
+[
+  {
+    "recordId": "daily-status-dashboard",
+    "documentPath": "fixtures/source-docs/00-daily-status-dashboard.md",
+    "contentSha256": "8462dbe8bd1bf061cad230adf832b8c38a04b4be75c1cbaecbbb43785019ddc1",
+    "byteLength": 1520,
+    "declaredSourceIds": [
+      "dashboard-snapshot-0730"
+    ],
+    "recordUpdatedAt": "2026-07-28T07:30:00Z"
+  },
+  {
+    "recordId": "docs-build-receipt",
+    "documentPath": "fixtures/source-docs/00-docs-build-receipt.md",
+    "contentSha256": "de007d53c2cc403206feece4656a0e391c43b8b93652126ae011bfc4c874c4f5",
+    "byteLength": 991,
+    "declaredSourceIds": [
+      "docs-run-0840"
+    ],
+    "recordUpdatedAt": "2026-07-28T08:40:00Z"
+  },
+  {
+    "recordId": "nightly-export-receipt",
+    "documentPath": "fixtures/source-docs/00-nightly-export-receipt.md",
+    "contentSha256": "e5029f08fc31e7ee4155a93b80c0912931d8cd6964efe78e42a7e0fc99fa0d12",
+    "byteLength": 976,
+    "declaredSourceIds": [
+      "export-run-0802"
+    ],
+    "recordUpdatedAt": "2026-07-28T08:02:00Z"
+  },
+  {
+    "recordId": "weekly-report-receipt",
+    "documentPath": "fixtures/source-docs/00-weekly-report-receipt.md",
+    "contentSha256": "3326c254d0321c8000355d860a40ad204ffe43dcb92aef61a9541fe915444395",
+    "byteLength": 1059,
+    "declaredSourceIds": [
+      "report-run-0905"
+    ],
+    "recordUpdatedAt": "2026-07-28T09:05:00Z"
+  },
+  {
+    "recordId": "launch-readiness",
+    "documentPath": "fixtures/source-docs/01-northstar-launch.md",
+    "contentSha256": "9d32c6025c3c4a93b8c62b931cc2bdfa3edc6e2ab5d4c44821cd4b432bcadbdb",
+    "byteLength": 1091,
+    "declaredSourceIds": [
+      "decision-log-42",
+      "runbook-v3"
+    ],
+    "recordUpdatedAt": "2026-07-20T14:30:00Z"
+  },
+  {
+    "recordId": "support-escalation",
+    "documentPath": "fixtures/source-docs/02-support-escalation.md",
+    "contentSha256": "7543c9a2c0d02023b325ac849751e67c54677483e8b7f41ab602b9fc07bf8038",
+    "byteLength": 944,
+    "declaredSourceIds": [
+      "support-policy-7"
+    ],
+    "recordUpdatedAt": "2026-07-18T16:00:00Z"
+  },
+  {
+    "recordId": "legacy-vendor-review",
+    "documentPath": "fixtures/source-docs/03-legacy-vendor-review.md",
+    "contentSha256": "77696402ce42ca415ddd92dafcf5beaf38bf286120c48cc1a7b1da3f69c1388e",
+    "byteLength": 769,
+    "declaredSourceIds": [
+      "risk-review-18"
+    ],
+    "recordUpdatedAt": "2026-05-15T12:00:00Z"
+  }
+]

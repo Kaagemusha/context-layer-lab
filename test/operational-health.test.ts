@@ -1,0 +1,577 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+
+import {
+  assessOperationalHealth,
+  assessmentsConflict,
+  selectedEvidenceRecordIds,
+  type OperationalAssessment,
+} from "../src/operational-health.js";
+import type { OperationalAssertion } from "../src/context.js";
+
+type FixtureClaim = {
+  text: string;
+  sourceIds: string[];
+  operational?: OperationalAssertion;
+};
+type FixtureRecord = {
+  id: string;
+  claims: FixtureClaim[];
+  sources: Array<{
+    id: string;
+    observedAt: string;
+    [key: string]: unknown;
+  }>;
+  [key: string]: unknown;
+};
+
+const scenario = JSON.parse(
+  await readFile(
+    new URL("../../evals/operational-health.json", import.meta.url),
+    "utf8",
+  ),
+);
+const records: FixtureRecord[] = JSON.parse(
+  await readFile(
+    new URL("../../data/context-records.json", import.meta.url),
+    "utf8",
+  ),
+);
+
+function bindRecord(
+  input: FixtureRecord[],
+  recordId: string,
+  operational: OperationalAssertion,
+): FixtureRecord[] {
+  const cloned = structuredClone(input);
+  const record = cloned.find((candidate) => candidate.id === recordId);
+  if (!record?.claims[0]) throw new Error(`Missing fixture record ${recordId}`);
+  record.claims[0].operational = operational;
+  const source = record.sources.find((candidate) =>
+    record.claims[0]!.sourceIds.includes(candidate.id),
+  );
+  if (!source) throw new Error(`Missing fixture source for ${recordId}`);
+  source.observedAt = operational.observedAt;
+  return cloned;
+}
+
+function permutations<T>(items: T[]): T[][] {
+  if (items.length > 8) {
+    throw new Error("Permutation invariant fixture exceeds the bounded size of 8");
+  }
+  if (items.length <= 1) return [items];
+  return items.flatMap((item, index) =>
+    permutations([...items.slice(0, index), ...items.slice(index + 1)]).map(
+      (rest) => [item, ...rest],
+    ),
+  );
+}
+
+function decisionProjection(assessment: OperationalAssessment) {
+  return {
+    naiveVerdict: assessment.naiveVerdict,
+    governedVerdict: assessment.governedVerdict,
+    summaryStale: assessment.summaryStale,
+    decisionPrevented: assessment.decisionPrevented,
+    newerEvidenceRecordIds: [...assessment.newerEvidenceRecordIds].sort(),
+    laneAssessments: assessment.laneAssessments,
+  };
+}
+
+test("newer run receipts override a stale healthy summary", () => {
+  const result = assessOperationalHealth(scenario.scenario, records);
+  assert.equal(result.naiveVerdict, "healthy");
+  assert.equal(result.governedVerdict, "attention");
+  assert.equal(result.summaryStale, true);
+  assert.equal(result.decisionPrevented, true);
+  assert.deepEqual(
+    result.laneAssessments
+      .filter((lane) => lane.state === "attention")
+      .map((lane) => lane.id),
+    scenario.expected.attentionLaneIds,
+  );
+});
+
+test("not-yet-due lanes do not create false failures", () => {
+  const result = assessOperationalHealth(scenario.scenario, records);
+  assert.deepEqual(
+    result.laneAssessments
+      .filter((lane) => lane.state === "not_due")
+      .map((lane) => lane.id),
+    scenario.expected.notDueLaneIds,
+  );
+});
+
+test("summary observation respects the diagnostic time boundary", () => {
+  assert.doesNotThrow(() =>
+    assessOperationalHealth(
+      {
+        ...scenario.scenario,
+        asOf: scenario.scenario.summary.observedAt,
+      },
+      records,
+    ),
+  );
+  assert.throws(
+    () =>
+      assessOperationalHealth(
+        {
+          ...scenario.scenario,
+          asOf: "2026-07-28T07:00:00Z",
+        },
+        records,
+      ),
+    /Summary observation cannot postdate the diagnostic asOf time/,
+  );
+});
+
+test("receipt permutations preserve the operational decision", () => {
+  const expected = decisionProjection(
+    assessOperationalHealth(scenario.scenario, records),
+  );
+
+  for (const receipts of permutations(scenario.scenario.receipts)) {
+    const observed = decisionProjection(
+      assessOperationalHealth(
+        { ...scenario.scenario, receipts },
+        records,
+      ),
+    );
+    assert.deepEqual(observed, expected);
+  }
+});
+
+test("record permutations preserve the complete assessment", () => {
+  const expected = assessOperationalHealth(scenario.scenario, records);
+
+  for (const recordOrder of permutations(records)) {
+    assert.deepEqual(
+      assessOperationalHealth(scenario.scenario, recordOrder),
+      expected,
+    );
+  }
+});
+
+test("future receipts cannot alter a point-in-time decision", () => {
+  const originalReceipt = scenario.scenario.receipts[0];
+  const originalRecord = records.find(
+    (record) => record.id === originalReceipt.recordId,
+  );
+  if (!originalRecord?.claims[0]) throw new Error("Fixture record missing");
+
+  const futureObservedAt = "2026-07-28T09:20:00Z";
+  const futureRecord = structuredClone(originalRecord);
+  futureRecord.id = "nightly-export-future-receipt";
+  futureRecord.updatedAt = futureObservedAt;
+  const futureClaim = futureRecord.claims[0];
+  if (!futureClaim) throw new Error("Fixture claim missing");
+  futureClaim.operational = {
+    kind: "receipt",
+    laneId: originalReceipt.laneId,
+    observedAt: futureObservedAt,
+    outcome: "failed",
+  };
+  const source = futureRecord.sources.find((candidate) =>
+    futureClaim.sourceIds.includes(candidate.id),
+  );
+  if (!source) throw new Error("Fixture source missing");
+  source.observedAt = futureObservedAt;
+
+  const observed = assessOperationalHealth(
+    {
+      ...scenario.scenario,
+      receipts: [
+        ...scenario.scenario.receipts,
+        {
+          recordId: futureRecord.id,
+          laneId: originalReceipt.laneId,
+          observedAt: futureObservedAt,
+          outcome: "failed",
+        },
+      ],
+    },
+    [...records, futureRecord],
+  );
+
+  assert.equal(observed.evidenceQuality[futureRecord.id]?.state, "valid");
+  assert.ok(!observed.newerEvidenceRecordIds.includes(futureRecord.id));
+  assert.deepEqual(
+    decisionProjection(observed),
+    decisionProjection(assessOperationalHealth(scenario.scenario, records)),
+  );
+});
+
+test("missing evidence records fail closed", () => {
+  assert.throws(
+    () =>
+      assessOperationalHealth(
+        scenario.scenario,
+        records.filter(
+          (record: { id: string }) =>
+            record.id !== scenario.scenario.summary.recordId,
+        ),
+      ),
+    /Operational evidence record ".+" was not found/,
+  );
+});
+
+test("degraded success evidence does not establish a healthy lane", () => {
+  const degradedRecords = records.map((record: { id: string }) =>
+    record.id === "nightly-export-receipt"
+      ? { ...record, validUntil: "2026-07-28T08:30:00Z" }
+      : record,
+  );
+  const result = assessOperationalHealth(scenario.scenario, degradedRecords);
+  const nightlyExport = result.laneAssessments.find(
+    (lane) => lane.id === "nightly-export",
+  );
+
+  assert.equal(nightlyExport?.outcome, "success");
+  assert.equal(nightlyExport?.state, "attention");
+  assert.equal(
+    result.evidenceQuality["nightly-export-receipt"]?.state,
+    "degraded",
+  );
+});
+
+test("unknown receipt lanes fail closed", () => {
+  assert.throws(
+    () =>
+      assessOperationalHealth(
+        {
+          ...scenario.scenario,
+          receipts: [
+            ...scenario.scenario.receipts,
+            {
+              recordId: "unknown-lane-receipt",
+              laneId: "unknown-lane",
+              observedAt: scenario.scenario.asOf,
+              outcome: "success",
+            },
+          ],
+        },
+        records,
+      ),
+    /Receipt references unknown lane "unknown-lane"/,
+  );
+});
+
+test("rejects duplicate operational lane IDs", () => {
+  assert.throws(
+    () =>
+      assessOperationalHealth(
+        {
+          ...scenario.scenario,
+          lanes: [
+            ...scenario.scenario.lanes,
+            scenario.scenario.lanes[0],
+          ],
+        },
+        records,
+      ),
+    /Duplicate lane ID/,
+  );
+});
+
+test("rejects duplicate receipt record IDs", () => {
+  assert.throws(
+    () =>
+      assessOperationalHealth(
+        {
+          ...scenario.scenario,
+          receipts: [
+            ...scenario.scenario.receipts,
+            scenario.scenario.receipts[0],
+          ],
+        },
+        records,
+      ),
+    /Duplicate receipt record ID/,
+  );
+});
+
+test("rejects order-dependent receipt timestamp ties", () => {
+  const original = scenario.scenario.receipts[0];
+  assert.throws(
+    () =>
+      assessOperationalHealth(
+        {
+          ...scenario.scenario,
+          receipts: [
+            ...scenario.scenario.receipts,
+            {
+              ...original,
+              recordId: "nightly-export-conflict",
+              outcome: "failed",
+            },
+          ],
+        },
+        records,
+      ),
+    /Duplicate receipt observation/,
+  );
+});
+
+test("rejects same-instant receipt ties written with different offsets", () => {
+  const original = scenario.scenario.receipts[0];
+  const instant = new Date(original.observedAt);
+  const shifted = new Date(instant.getTime() + 2 * 60 * 60 * 1000)
+    .toISOString()
+    .replace(/\.000Z$/, "+02:00");
+  assert.equal(new Date(shifted).getTime(), instant.getTime());
+  assert.throws(
+    () =>
+      assessOperationalHealth(
+        {
+          ...scenario.scenario,
+          receipts: [
+            ...scenario.scenario.receipts,
+            {
+              ...original,
+              recordId: "nightly-export-conflict",
+              observedAt: shifted,
+              outcome: "failed",
+            },
+          ],
+        },
+        records,
+      ),
+    /Duplicate receipt observation/,
+  );
+});
+
+test("rejects duplicate context record IDs", () => {
+  assert.throws(
+    () =>
+      assessOperationalHealth(scenario.scenario, [
+        ...records,
+        records[0],
+      ]),
+    /Duplicate context record ID "daily-status-dashboard"/,
+  );
+});
+
+test("scenario facts must match source-linked typed assertions", () => {
+  const mismatches = [
+    {
+      label: "summary verdict",
+      scenario: {
+        ...scenario.scenario,
+        summary: { ...scenario.scenario.summary, verdict: "attention" },
+      },
+    },
+    {
+      label: "receipt outcome",
+      scenario: {
+        ...scenario.scenario,
+        receipts: scenario.scenario.receipts.map(
+          (receipt: { recordId: string }) =>
+            receipt.recordId === "docs-build-receipt"
+              ? { ...receipt, outcome: "success" }
+              : receipt,
+        ),
+      },
+    },
+    {
+      label: "receipt lane",
+      scenario: {
+        ...scenario.scenario,
+        receipts: scenario.scenario.receipts.map(
+          (receipt: { recordId: string }) =>
+            receipt.recordId === "nightly-export-receipt"
+              ? { ...receipt, laneId: "docs-build" }
+              : receipt,
+        ),
+      },
+    },
+    {
+      label: "receipt observation time",
+      scenario: {
+        ...scenario.scenario,
+        receipts: scenario.scenario.receipts.map(
+          (receipt: { recordId: string }) =>
+            receipt.recordId === "nightly-export-receipt"
+              ? { ...receipt, observedAt: "2026-07-28T08:03:00Z" }
+              : receipt,
+        ),
+      },
+    },
+    {
+      label: "lane due time",
+      scenario: {
+        ...scenario.scenario,
+        lanes: scenario.scenario.lanes.map((lane: { id: string }) =>
+          lane.id === "docs-build"
+            ? { ...lane, dueAt: "2026-07-28T10:00:00Z" }
+            : lane,
+        ),
+      },
+    },
+    {
+      label: "lane coverage",
+      scenario: {
+        ...scenario.scenario,
+        lanes: scenario.scenario.lanes.filter(
+          (lane: { id: string }) => lane.id !== "docs-build",
+        ),
+        receipts: scenario.scenario.receipts.filter(
+          (receipt: { laneId: string }) => receipt.laneId !== "docs-build",
+        ),
+      },
+    },
+  ];
+
+  for (const mismatch of mismatches) {
+    assert.throws(
+      () => assessOperationalHealth(mismatch.scenario, records),
+      /does not match its typed operational assertion/,
+      mismatch.label,
+    );
+  }
+});
+
+test("typed assertions must retain their source observation time", () => {
+  const shiftedScenario = structuredClone(scenario.scenario);
+  const shiftedReceipt = shiftedScenario.receipts.find(
+    (receipt: { recordId: string }) =>
+      receipt.recordId === "nightly-export-receipt",
+  );
+  if (!shiftedReceipt) throw new Error("Fixture receipt missing");
+  shiftedReceipt.observedAt = "2026-07-28T08:03:00Z";
+
+  const shiftedRecords = structuredClone(records);
+  const shiftedRecord = shiftedRecords.find(
+    (record) => record.id === "nightly-export-receipt",
+  );
+  const shiftedAssertion = shiftedRecord?.claims[0]?.operational;
+  if (!shiftedAssertion || shiftedAssertion.kind !== "receipt") {
+    throw new Error("Fixture assertion missing");
+  }
+  shiftedAssertion.observedAt = shiftedReceipt.observedAt;
+
+  assert.throws(
+    () => assessOperationalHealth(shiftedScenario, shiftedRecords),
+    /must identify a declared source observed at 2026-07-28T08:03:00Z/,
+  );
+});
+
+test("operational evidence requires exactly one typed assertion", () => {
+  const unbound = structuredClone(records);
+  const unboundRecord = unbound.find(
+    (record) => record.id === "nightly-export-receipt",
+  );
+  if (!unboundRecord?.claims[0]) throw new Error("Fixture record missing");
+  delete unboundRecord.claims[0].operational;
+  assert.throws(
+    () => assessOperationalHealth(scenario.scenario, unbound),
+    /must contain exactly one typed operational assertion/,
+  );
+
+  const ambiguous = structuredClone(records);
+  const ambiguousRecord = ambiguous.find(
+    (record) => record.id === "nightly-export-receipt",
+  );
+  if (!ambiguousRecord?.claims[0]) throw new Error("Fixture record missing");
+  ambiguousRecord.claims.push({
+    ...ambiguousRecord.claims[0],
+    text: "Duplicate operational assertion.",
+  });
+  assert.throws(
+    () => assessOperationalHealth(scenario.scenario, ambiguous),
+    /must contain exactly one typed operational assertion/,
+  );
+});
+
+test("detects a conflict when newer evidence clears earlier attention", () => {
+  const clearedScenario = {
+    ...scenario.scenario,
+    summary: { ...scenario.scenario.summary, verdict: "attention" },
+    receipts: scenario.scenario.receipts.map(
+      (receipt: { outcome: string }) => ({ ...receipt, outcome: "success" }),
+    ),
+  };
+  let reboundRecords = bindRecord(records, clearedScenario.summary.recordId, {
+    kind: "summary",
+    observedAt: clearedScenario.summary.observedAt,
+    verdict: "attention",
+    lanes: clearedScenario.lanes,
+  });
+  for (const receipt of clearedScenario.receipts) {
+    reboundRecords = bindRecord(reboundRecords, receipt.recordId, {
+      kind: "receipt",
+      laneId: receipt.laneId,
+      observedAt: receipt.observedAt,
+      outcome: "success",
+    });
+  }
+  const result = assessOperationalHealth(
+    clearedScenario,
+    reboundRecords,
+  );
+
+  assert.equal(result.naiveVerdict, "attention");
+  assert.equal(result.governedVerdict, "healthy");
+  assert.equal(assessmentsConflict(result), true);
+});
+
+test("selects only evidence records used by lane assessments", () => {
+  const reboundRecords = bindRecord(records, "legacy-vendor-review", {
+    kind: "receipt",
+    laneId: "docs-build",
+    observedAt: "2026-07-28T07:40:00Z",
+    outcome: "success",
+  });
+  const result = assessOperationalHealth(
+    {
+      ...scenario.scenario,
+      receipts: [
+        {
+          recordId: "legacy-vendor-review",
+          laneId: "docs-build",
+          observedAt: "2026-07-28T07:40:00Z",
+          outcome: "success",
+        },
+        ...scenario.scenario.receipts,
+      ],
+    },
+    reboundRecords,
+  );
+
+  assert.equal(result.evidenceQuality["legacy-vendor-review"]?.state, "degraded");
+  assert.equal(
+    selectedEvidenceRecordIds(result).includes("legacy-vendor-review"),
+    false,
+  );
+  assert.equal(
+    selectedEvidenceRecordIds(result).includes("docs-build-receipt"),
+    true,
+  );
+});
+
+// Regression guard: an aggregator that computes freshness against a fixed
+// rolling lookback window, rather than each lane's own due time, stops
+// counting a failure once it falls outside that window. This scenario proves
+// assessOperationalHealth has no equivalent implicit cutoff: a due lane's
+// only evidence remains attention-worthy no matter how much later `asOf`
+// is, as long as the evidence record itself stays within its own declared
+// `validUntil`.
+test("a due lane's only failing evidence stays attention-worthy no matter how much later asOf is", () => {
+  const farFutureAsOf = "2026-09-15T00:00:00Z";
+  const longLivedRecords = records.map((record) =>
+    record.id === "docs-build-receipt"
+      ? { ...record, validUntil: "2027-01-01T00:00:00Z" }
+      : record,
+  );
+  const farFutureScenario = { ...scenario.scenario, asOf: farFutureAsOf };
+
+  const result = assessOperationalHealth(farFutureScenario, longLivedRecords);
+  const docsBuild = result.laneAssessments.find(
+    (lane) => lane.id === "docs-build",
+  );
+
+  assert.equal(result.evidenceQuality["docs-build-receipt"]?.state, "valid");
+  assert.equal(docsBuild?.outcome, "failed");
+  assert.equal(docsBuild?.state, "attention");
+  assert.equal(result.governedVerdict, "attention");
+});

@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en" data-boot="loading">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0A0A0B">
+<title>Context Layer Lab</title>
+<meta name="description" content="A green dashboard misses two later problems. A deterministic diagnostic compares newer run receipts and schedules before it answers. Runs in your browser, no model call.">
+<meta property="og:title" content="Context Layer Lab">
+<meta property="og:description" content="A green dashboard misses two later problems. A deterministic diagnostic compares newer run receipts and schedules before it answers. Runs in your browser, no model call.">
+<meta property="og:url" content="https://kaagemusha.github.io/context-layer-lab/">
+<meta property="og:image" content="https://kaagemusha.github.io/context-layer-lab/media/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="./favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="./styles.css?v=2">
+<link rel="modulepreload" href="./runtime.js">
+<link rel="preload" href="./operational-health.json" as="fetch" crossorigin>
+</head>
+<body>
+<a class="skip" href="#demo">Skip to the scenario</a>
+<header class="masthead">
+  <div class="wrap masthead-row">
+    <a class="wordmark" href="https://antoine.nutu.net/">Antoine Desjonquères</a>
+    <a class="mast-link mast-back" href="https://antoine.nutu.net/#selected-work">Selected work</a>
+    <nav class="pair" aria-label="The two labs">
+      <span class="pair-item" aria-current="page"><span class="mark now" aria-hidden="true"></span><span class="vh">Lab 1 of 2: </span>Evidence</span>
+      <span class="pair-line" aria-hidden="true"></span>
+      <a class="pair-item" href="https://kaagemusha.github.io/governed-action-lab/"><span class="mark pending" aria-hidden="true"></span><span class="vh">Lab 2 of 2: </span>Action</a>
+    </nav>
+    <a class="mast-link mast-src" href="https://github.com/Kaagemusha/context-layer-lab">Source</a>
+  </div>
+</header>
+
+<main id="main">
+  <section class="intro" aria-labelledby="title">
+    <div class="wrap">
+      <p class="kicker">Reference lab · evidence</p>
+      <h1 id="title">Context Layer Lab</h1>
+      <p class="lede">A green dashboard misses two later problems. I built a deterministic diagnostic that compares newer receipts and schedules before it answers.</p>
+    </div>
+  </section>
+
+  <section class="stage" id="demo" tabindex="-1" aria-labelledby="question">
+    <div class="wrap stage-grid">
+      <div class="stage-main">
+        <p class="small" id="clock-line">Scenario clock: 09:10 UTC, 28 Jul 2026, fixed.</p>
+        <h2 id="question" class="question">Are all scheduled automations healthy?</h2>
+
+        <dl class="answers">
+          <div class="answer" id="answer-dashboard" data-state="expired">
+            <dt id="dash-label">The dashboard, 07:30</dt>
+            <dd class="answer-word"><span class="strike-target" id="dash-word">Yes.</span><span class="vh" id="dash-suffix"> (expired at 07:55)</span></dd>
+            <dd class="answer-note" id="dash-note">Expired at 07:55. It still says yes.</dd>
+          </div>
+          <div class="answer" id="answer-evidence" data-state="checking">
+            <dt id="evid-label">The evidence, 09:10</dt>
+            <dd class="answer-word" id="evid-word"><span class="checking">Checking the evidence in your browser.</span></dd>
+            <dd class="answer-state" id="evid-state" hidden></dd>
+            <dd class="answer-note" id="evid-note" hidden></dd>
+          </div>
+        </dl>
+
+        <div class="stage-actions">
+          <button class="btn btn-primary" id="run" type="button" aria-disabled="true">Run the public scenario</button>
+          <button class="btn-text" id="copy-answer" type="button" hidden>Copy the answer</button>
+        </div>
+        <p class="small status" id="boot-status">Loading the diagnostic.</p>
+        <p class="ticker small" id="ticker" aria-hidden="true" hidden></p>
+      </div>
+
+      <div class="stage-side">
+        <h3 class="label" id="trace-title">What arrived between 07:30 and 09:10</h3>
+        <ol class="trace" id="trace" aria-labelledby="trace-title">
+          <li data-at="07:30"><span class="t-time">07:30</span><span class="mark ok" aria-hidden="true"></span>
+            <span class="t-body"><span class="t-label">Dashboard says all jobs are healthy.</span><span class="t-detail">Valid until 07:55.</span></span>
+            <span class="t-side"><span class="word stale">Expired</span><button class="btn-text" type="button" data-record-id="daily-status-dashboard" aria-disabled="true">Record</button></span></li>
+          <li class="compact" data-at="07:55"><span class="t-time">07:55</span><span class="mark stale" aria-hidden="true"></span>
+            <span class="t-body"><span class="t-label">Dashboard expires. Nightly Export is due.</span></span></li>
+          <li data-at="08:02"><span class="t-time">08:02</span><span class="mark ok" aria-hidden="true"></span>
+            <span class="t-body"><span class="t-label">Nightly Export succeeded.</span></span>
+            <span class="t-side"><span class="word ok">Succeeded</span><button class="btn-text" type="button" data-record-id="nightly-export-receipt" aria-disabled="true">Record</button></span></li>
+          <li class="compact" data-at="08:15"><span class="t-time">08:15</span><span class="mark pending" aria-hidden="true"></span>
+            <span class="t-body"><span class="t-label">Docs Build is due.</span></span></li>
+          <li class="compact" data-at="08:30"><span class="t-time">08:30</span><span class="mark pending" aria-hidden="true"></span>
+            <span class="t-body"><span class="t-label">Weekly Report is due.</span></span></li>
+          <li data-at="08:40"><span class="t-time">08:40</span><span class="mark stop" aria-hidden="true"></span>
+            <span class="t-body"><span class="t-label">Docs Build failed.</span></span>
+            <span class="t-side"><span class="word stop">Failed</span><button class="btn-text" type="button" data-record-id="docs-build-receipt" aria-disabled="true">Record</button></span></li>
+          <li data-at="09:05"><span class="t-time">09:05</span><span class="mark hold" aria-hidden="true"></span>
+            <span class="t-body"><span class="t-label">Weekly Report finished. Output not published.</span></span>
+            <span class="t-side"><span class="word hold">Not published</span><button class="btn-text" type="button" data-record-id="weekly-report-receipt" aria-disabled="true">Record</button></span></li>
+          <li data-at="09:10"><span class="t-time">09:10</span><span class="mark now" aria-hidden="true"></span>
+            <span class="t-body"><span class="t-label">The question is asked.</span><span class="t-detail">The answer uses everything above.</span></span>
+            <span class="t-side"><span class="word">Now</span></span></li>
+        </ol>
+        <p class="small" id="trace-note">Data Sync is due at 17:30, so it is not counted yet.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap quiet" id="quiet">
+    <p class="small" id="quiet-line">Synthetic scenario on a fixed clock. Runs in your browser. Nothing is uploaded.</p>
+    <button class="btn-text" id="quiet-back" type="button" hidden>Back to the public scenario</button>
+  </div>
+  <noscript><p class="wrap noscript">This lab recomputes its answer in your browser with JavaScript. Without it, here is the published answer from the generated eval report: the 07:30 dashboard says healthy, but by 09:10 Docs Build had failed and Weekly Report had not published, so the answer is needs attention. <a href="https://github.com/Kaagemusha/context-layer-lab/blob/main/docs/eval-report.md">Read the eval report</a>.</p></noscript>
+
+  <section class="section" id="why" aria-labelledby="why-title">
+    <div class="wrap spread">
+      <h2 id="why-title">Why the answer is no.</h2>
+      <div class="section-body" data-slot="why">
+        <p class="small reserve">The four checks appear once the diagnostic has loaded.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="jobs" aria-labelledby="jobs-title">
+    <div class="wrap spread">
+      <h2 id="jobs-title">Each scheduled job.</h2>
+      <div class="section-body" data-slot="jobs">
+        <p class="small reserve">The job table appears once the diagnostic has loaded.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="contrast" aria-labelledby="contrast-title">
+    <div class="wrap spread">
+      <h2 id="contrast-title">Is this just a timestamp check?</h2>
+      <div class="section-body" data-slot="contrast">
+        <p class="small reserve">The comparison appears once the diagnostic has loaded.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="fool" aria-labelledby="fool-title">
+    <div class="wrap spread">
+      <h2 id="fool-title">Try to fool the checker.</h2>
+      <div class="section-body">
+        <div data-slot="fool">
+          <p class="lead-p">The answer is never read from the file. The checker recomputes it from the run receipts and rejects a snapshot that disagrees with itself. Pick an edit. The page applies it to a copy of the public snapshot and runs the same checker.</p>
+          <div class="presets" id="presets">
+            <button class="btn btn-secondary preset" type="button" data-preset="verdict" aria-disabled="true"><span class="preset-label">Change the answer to healthy</span><code class="preset-edit">assessment.governedVerdict: "attention" to "healthy"</code></button>
+            <button class="btn btn-secondary preset" type="button" data-preset="outcome" aria-disabled="true"><span class="preset-label">Say Docs Build succeeded</span><code class="preset-edit">scenario.receipts[docs-build-receipt].outcome: "failed" to "success"</code></button>
+            <button class="btn btn-secondary preset" type="button" data-preset="drop" aria-disabled="true"><span class="preset-label">Drop the failed run</span><code class="preset-edit">scenario.receipts: remove docs-build-receipt</code></button>
+            <button class="btn btn-secondary preset" type="button" data-preset="noon" aria-disabled="true"><span class="preset-label">Keep the dashboard valid until noon</span><code class="preset-edit">records[daily-status-dashboard].validUntil: "2026-07-28T07:55:00Z" to "2026-07-28T12:00:00Z"</code></button>
+          </div>
+          <p class="small preset-note" id="preset-note" hidden>These edits use the public scenario. Go back to it to try them.</p>
+          <p class="fool-result" id="fool-result" hidden></p>
+          <p class="small limit">The limit: if someone rewrites the receipts, their claims, and the answer together, the checker will agree with them. It checks that a snapshot is consistent, not that its sources are true.</p>
+        </div>
+
+        <div class="own">
+          <h3 id="own-title">Check your own snapshot.</h3>
+          <p>Generate a snapshot from your own records and open it here. It is read in this tab only and checked the same way. A snapshot that does not match its own evidence is rejected, and the page keeps its previous answer.</p>
+          <pre><code>git clone https://github.com/Kaagemusha/context-layer-lab
+cd context-layer-lab
+npm ci
+npm run diagnose -- --output snapshot.json</code></pre>
+          <div class="own-actions">
+            <button class="btn btn-secondary" id="open-snapshot" type="button">Open snapshot</button>
+            <button class="btn-text" id="back-to-public" type="button" hidden>Back to the public scenario</button>
+            <input type="file" id="snapshot-file" accept=".json,application/json" hidden>
+          </div>
+          <p class="small" id="snapshot-status">Showing the public scenario.</p>
+          <p class="snapshot-error" id="snapshot-error" role="alert" hidden></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="search" aria-labelledby="search-title">
+    <div class="wrap spread">
+      <h2 id="search-title">Search the evidence.</h2>
+      <div class="section-body" data-slot="search">
+        <p class="lead-p" id="search-lead">The diagnostic can also search the 4 records it used. Current records always rank before expired ones.</p>
+        <form class="search-form" id="search-form" role="search">
+          <label for="search-query">Search the records</label>
+          <div class="search-row">
+            <input type="search" id="search-query" name="q" value="status dashboard" placeholder="Try status dashboard, failed, or deployment" autocomplete="off" spellcheck="false">
+            <button class="btn btn-secondary" type="submit">Search</button>
+          </div>
+        </form>
+        <div class="suggest">
+          <span class="small">Try:</span>
+          <button class="btn btn-secondary btn-small" type="button" data-suggest="status dashboard">status dashboard</button>
+          <button class="btn btn-secondary btn-small" type="button" data-suggest="failed">failed</button>
+          <button class="btn btn-secondary btn-small" type="button" data-suggest="deployment">deployment</button>
+        </div>
+        <p id="search-count" class="search-count"></p>
+        <p class="small" id="search-order" hidden></p>
+        <ul class="ruled results" id="search-results" aria-labelledby="search-title"></ul>
+        <p class="small foot">Keyword ranking (BM25F), current records first, up to 5 results. It searches this snapshot only.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="proof" aria-labelledby="proof-title">
+    <div class="wrap spread">
+      <h2 id="proof-title">What this proves, and what it does not.</h2>
+      <div class="section-body">
+        <p>It proves the records you can open support the answer, under explicit freshness and schedule rules. The answer is recomputed from them in your browser, and a snapshot that disagrees with itself is rejected.</p>
+        <p>It does not prove that a source is true, give anyone permission to act, or fill in what the records leave out. Missing evidence is reported as missing.</p>
+        <table class="stack ledger">
+          <thead><tr><th scope="col">Claim</th><th scope="col">How to check it</th></tr></thead>
+          <tbody>
+            <tr><td data-label="Claim">17 of 17 evaluations pass: 7 record and operational, 10 retrieval.</td><td data-label="How to check it">Read the <a href="https://github.com/Kaagemusha/context-layer-lab/blob/main/docs/eval-report.md">eval report</a>, or run <code>npm run eval</code>.</td></tr>
+            <tr><td data-label="Claim">No model call.</td><td data-label="How to check it">Open your browser's network panel and press Run the public scenario. Nothing is requested.</td></tr>
+            <tr><td data-label="Claim">Same snapshot, same answer.</td><td data-label="How to check it">Run it twice and copy the answer each time. The text is identical.</td></tr>
+            <tr><td data-label="Claim">It fails closed.</td><td data-label="How to check it"><a href="#fool">Try to fool the checker</a>, above.</td></tr>
+          </tbody>
+        </table>
+        <p class="small">Version 1.2.0, released 1 Oct 2026.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="next" aria-labelledby="next-title">
+    <div class="wrap spread">
+      <h2 id="next-title">Next: what may run.</h2>
+      <div class="section-body">
+        <p id="next-text">An answer is not permission to act. Lab 2 of 2 starts from this answer: an agent proposes a retry of the failed Docs Build, but cannot approve it itself.</p>
+        <p class="next-action"><a class="btn btn-ghost" href="https://kaagemusha.github.io/governed-action-lab/#retry">Open Governed Action Lab</a></p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <ul class="footer-dir" role="list">
+      <li class="dir"><span class="dir-label">Back to</span><span class="dir-leader" aria-hidden="true"></span><a class="dir-value" href="https://antoine.nutu.net/#selected-work">Selected work</a></li>
+      <li class="dir"><span class="dir-label">Other lab</span><span class="dir-leader" aria-hidden="true"></span><a class="dir-value" href="https://kaagemusha.github.io/governed-action-lab/">Governed Action Lab</a></li>
+      <li class="dir"><span class="dir-label">Source</span><span class="dir-leader" aria-hidden="true"></span><a class="dir-value" href="https://github.com/Kaagemusha/context-layer-lab">github.com/Kaagemusha/context-layer-lab</a></li>
+      <li class="dir"><span class="dir-label">Eval report</span><span class="dir-leader" aria-hidden="true"></span><a class="dir-value" href="https://github.com/Kaagemusha/context-layer-lab/blob/main/docs/eval-report.md">17 of 17 pass</a></li>
+      <li class="dir"><span class="dir-label">Version</span><span class="dir-leader" aria-hidden="true"></span><a class="dir-value" href="https://github.com/Kaagemusha/context-layer-lab/blob/main/CHANGELOG.md">1.2.0, released 1 Oct 2026</a></li>
+      <li class="dir"><span class="dir-label">Contact</span><span class="dir-leader" aria-hidden="true"></span><a class="dir-value" href="https://antoine.nutu.net/#contact">antoine.nutu.net</a></li>
+    </ul>
+    <div class="colophon">
+      <img class="colophon-mark" src="./favicon.svg" alt="" width="28" height="28">
+      <p>Context Layer Lab is a public reference lab by Antoine Desjonquères. MIT license.</p>
+      <p class="small">Synthetic data. Runs in your browser. Nothing is uploaded.</p>
+    </div>
+  </div>
+</footer>
+
+<dialog id="record-dialog" aria-labelledby="record-title">
+  <div class="dialog-head">
+    <h2 id="record-title">Record</h2>
+    <button class="btn btn-secondary dialog-close" id="record-close" type="button">Close</button>
+  </div>
+  <div id="record-body"></div>
+</dialog>
+
+<p id="announcer" class="vh" role="status" aria-live="polite"></p>
+<script>
+  setTimeout(function () {
+    if (document.documentElement.dataset.boot === "loading") {
+      var s = document.getElementById("boot-status");
+      if (s) s.textContent = "Still loading. Reload the page if nothing changes.";
+    }
+  }, 6000);
+</script>
+<script type="module" src="./app.js?v=2"></script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+{
+  "scenario": {
+    "question": "Are all scheduled automations healthy?",
+    "asOf": "2026-07-28T09:10:00Z",
+    "lanes": [
+      {
+        "id": "nightly-export",
+        "label": "Nightly Export",
+        "dueAt": "2026-07-28T07:55:00Z"
+      },
+      {
+        "id": "docs-build",
+        "label": "Docs Build",
+        "dueAt": "2026-07-28T08:15:00Z"
+      },
+      {
+        "id": "weekly-report",
+        "label": "Weekly Report",
+        "dueAt": "2026-07-28T08:30:00Z"
+      },
+      {
+        "id": "data-sync",
+        "label": "Data Sync",
+        "dueAt": "2026-07-28T17:30:00Z"
+      }
+    ],
+    "summary": {
+      "recordId": "daily-status-dashboard",
+      "observedAt": "2026-07-28T07:30:00Z",
+      "verdict": "healthy"
+    },
+    "receipts": [
+      {
+        "recordId": "nightly-export-receipt",
+        "laneId": "nightly-export",
+        "observedAt": "2026-07-28T08:02:00Z",
+        "outcome": "success"
+      },
+      {
+        "recordId": "docs-build-receipt",
+        "laneId": "docs-build",
+        "observedAt": "2026-07-28T08:40:00Z",
+        "outcome": "failed"
+      },
+      {
+        "recordId": "weekly-report-receipt",
+        "laneId": "weekly-report",
+        "observedAt": "2026-07-28T09:05:00Z",
+        "outcome": "preserved_local"
+      }
+    ]
+  },
+  "expected": {
+    "naiveVerdict": "healthy",
+    "governedVerdict": "attention",
+    "summaryStale": true,
+    "decisionPrevented": true,
+    "attentionLaneIds": [
+      "docs-build",
+      "weekly-report"
+    ],
+    "notDueLaneIds": [
+      "data-sync"
+    ]
+  },
+  "adversarialCases": [
+    {
+      "name": "typed receipt rejects a contradictory scenario outcome",
+      "receiptRecordId": "docs-build-receipt",
+      "scenarioOutcome": "success",
+      "expectedErrorIncludes": "does not match its typed operational assertion"
+    }
+  ]
+}

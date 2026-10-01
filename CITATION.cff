@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you reference this work, please cite it as below."
+title: "Context Layer Lab"
+abstract: >-
+  A small, inspectable reference implementation for stopping AI agents from
+  acting on stale operational context, using governed context records,
+  provenance, validity windows, and freshness-aware BM25F retrieval instead
+  of an unchecked aggregate summary.
+authors:
+  - family-names: Desjonqueres
+    given-names: Antoine
+license: MIT
+repository-code: "https://github.com/Kaagemusha/context-layer-lab"
+url: "https://kaagemusha.github.io/context-layer-lab/"
+version: 1.2.0
+date-released: "2026-10-01"
+type: software
+keywords:
+  - ai-agents
+  - context-engineering
+  - mcp
+  - typescript
+  - deterministic
+  - provenance
+  - reference-implementation

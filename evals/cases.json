@@ -1,0 +1,120 @@
+[
+  {
+    "name": "valid context",
+    "asOf": "2026-07-28T12:00:00Z",
+    "record": {
+      "id": "valid",
+      "title": "Valid record",
+      "summary": "A fully supported current record.",
+      "content": "The rollout owner is Program Operations.",
+      "tags": ["rollout"],
+      "owner": "Program Operations",
+      "updatedAt": "2026-07-20T12:00:00Z",
+      "validUntil": "2026-08-20T12:00:00Z",
+      "sources": [
+        {
+          "id": "source-1",
+          "label": "Decision log",
+          "url": "https://example.invalid/decision",
+          "observedAt": "2026-07-20T12:00:00Z"
+        }
+      ],
+      "claims": [
+        {
+          "text": "Program Operations owns the rollout.",
+          "sourceIds": ["source-1"]
+        }
+      ]
+    },
+    "expectedCodes": []
+  },
+  {
+    "name": "stale context",
+    "asOf": "2026-07-28T12:00:00Z",
+    "record": {
+      "id": "stale",
+      "title": "Expired record",
+      "summary": "A structurally valid but expired record.",
+      "content": "This decision is retained as history.",
+      "tags": ["history"],
+      "owner": "Operations",
+      "updatedAt": "2026-05-01T12:00:00Z",
+      "validUntil": "2026-06-01T12:00:00Z",
+      "sources": [
+        {
+          "id": "source-1",
+          "label": "Old decision",
+          "url": "https://example.invalid/old-decision",
+          "observedAt": "2026-05-01T12:00:00Z"
+        }
+      ],
+      "claims": [
+        {
+          "text": "The decision was active in May.",
+          "sourceIds": ["source-1"]
+        }
+      ]
+    },
+    "expectedCodes": ["stale_record"]
+  },
+  {
+    "name": "missing provenance",
+    "asOf": "2026-07-28T12:00:00Z",
+    "record": {
+      "id": "unprovenanced",
+      "title": "Unprovenanced record",
+      "summary": "A record with no declared evidence.",
+      "content": "A claim appears without a source.",
+      "tags": ["risk"],
+      "owner": "Operations",
+      "updatedAt": "2026-07-20T12:00:00Z",
+      "validUntil": "2026-08-20T12:00:00Z",
+      "sources": [],
+      "claims": [
+        {
+          "text": "The rollout is approved.",
+          "sourceIds": []
+        }
+      ]
+    },
+    "expectedCodes": ["missing_provenance"]
+  },
+  {
+    "name": "unsupported claim",
+    "asOf": "2026-07-28T12:00:00Z",
+    "record": {
+      "id": "unsupported",
+      "title": "Unsupported record",
+      "summary": "A claim references evidence the record does not declare.",
+      "content": "The claim cannot be traced to the source list.",
+      "tags": ["risk"],
+      "owner": "Operations",
+      "updatedAt": "2026-07-20T12:00:00Z",
+      "validUntil": "2026-08-20T12:00:00Z",
+      "sources": [
+        {
+          "id": "source-1",
+          "label": "Decision log",
+          "url": "https://example.invalid/decision",
+          "observedAt": "2026-07-20T12:00:00Z"
+        }
+      ],
+      "claims": [
+        {
+          "text": "Legal approved the rollout.",
+          "sourceIds": ["missing-source"]
+        }
+      ]
+    },
+    "expectedCodes": ["unsupported_claim"]
+  },
+  {
+    "name": "malformed record",
+    "asOf": "2026-07-28T12:00:00Z",
+    "record": {
+      "id": "malformed",
+      "summary": "This record has no title."
+    },
+    "expectedCodes": ["malformed_record"]
+  }
+]

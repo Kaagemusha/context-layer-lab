@@ -1,0 +1,60 @@
+{
+  "name": "context-layer-lab",
+  "version": "1.2.0",
+  "description": "A small, inspectable reference implementation for trustworthy AI context.",
+  "homepage": "https://kaagemusha.github.io/context-layer-lab/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kaagemusha/context-layer-lab.git"
+  },
+  "type": "module",
+  "private": false,
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "context-layer-lab": "./dist/src/server.js"
+  },
+  "files": [
+    "dist/src",
+    "data",
+    "evals",
+    "examples",
+    "fixtures",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build --silent && node --test dist/test/*.test.js",
+    "eval": "npm run build --silent && node dist/src/eval-runner.js && node dist/src/retrieval-eval-runner.js && node dist/src/eval-report.js",
+    "eval:retrieval": "npm run build --silent && node dist/src/retrieval-eval-runner.js",
+    "eval:report": "npm run build --silent && node dist/src/eval-report.js",
+    "ingest": "npm run build --silent && node dist/src/ingest-runner.js",
+    "ingest:check": "npm run build --silent && node dist/src/ingest-runner.js --check",
+    "fixture:check": "npm run build --silent && node dist/src/fixture-check-runner.js",
+    "snapshot:age": "node scripts/check-snapshot-age.mjs",
+    "demo": "npm run build --silent && node dist/src/demo-runner.js",
+    "diagnose": "npm run build --silent && node dist/src/diagnose-runner.js",
+    "adapt:trajectory": "npm run build --silent && node dist/src/adapt-trajectory-runner.js",
+    "browser:sync": "node scripts/build-browser-runtime.mjs",
+    "browser:check": "node scripts/build-browser-runtime.mjs --check",
+    "demo:sync": "npm run build --silent && npm run browser:sync --silent && node scripts/sync-demo.mjs",
+    "demo:check": "npm run build --silent && npm run browser:check --silent && node scripts/sync-demo.mjs --check",
+    "public-safety:check": "node scripts/check-public-safety.mjs",
+    "public-safety:install": "git config core.hooksPath .githooks",
+    "check": "node scripts/check.mjs",
+    "start": "node dist/src/server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "26.4.0",
+    "esbuild": "^0.28.2",
+    "typescript": "5.9.3"
+  }
+}
