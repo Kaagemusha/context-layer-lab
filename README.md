@@ -4,6 +4,8 @@
 ![Node 22](https://img.shields.io/badge/node-22-339933?logo=node.js&logoColor=white)
 ![17/17 eval cases](https://img.shields.io/badge/eval-17%2F17-brightgreen)
 
+[![The live diagnostic: the 07:30 dashboard says yes, the evidence at 09:10 says no, with the timeline of what arrived in between](docs/media/og.png)](https://kaagemusha.github.io/context-layer-lab/)
+
 A small, inspectable reference implementation for stopping AI agents from
 acting on stale operational context.
 
