@@ -1,3 +1,4 @@
+import "./browser-jitless.js";
 export {
   DIAGNOSTIC_SNAPSHOT_FORMAT,
   verifyDiagnosticSnapshot,

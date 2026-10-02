@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.2.2 (2026-10-02)
+
+**No console warning under the security policy.** Zod probed `eval` on load,
+which the page's Content Security Policy blocks; the page still worked but
+logged a violation on every visit. The browser bundle now runs Zod in jitless
+mode, so it never makes the probe.
+
+**Browser check.** `npm run check` now loads the console in headless Chrome at
+320, 375 and 390 px, fails on horizontal overflow, and fails if the page
+reports a Content Security Policy violation or an uncaught error.
+
+**Counts that cannot drift.** A new check recounts the evals and
+fails if the README badges state different numbers.
+
 ## 1.2.1 (2026-10-02)
 
 **Console redesign.** The public console now matches antoine.nutu.net: dark

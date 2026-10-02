@@ -18,11 +18,13 @@ const steps = [
   ["record and operational evals", [node, "dist/src/eval-runner.js"]],
   ["retrieval evals", [node, "dist/src/retrieval-eval-runner.js"]],
   ["eval report in sync", [node, "dist/src/eval-report.js", "--check"]],
+  ["public counts match the eval report", [node, "scripts/check-public-counts.mjs"]],
   ["ingested data in sync", [node, "dist/src/ingest-runner.js", "--check"]],
   ["fixture states", [node, "dist/src/fixture-check-runner.js"]],
   ["browser runtime in sync", [node, "scripts/build-browser-runtime.mjs", "--check"]],
   ["demo data in sync", [node, "scripts/sync-demo.mjs", "--check"]],
   ["demo", [node, "dist/src/demo-runner.js"]],
+  ["console boots at phone widths", [node, "scripts/check-responsive.mjs"]],
 ];
 
 for (const [label, command] of steps) {
