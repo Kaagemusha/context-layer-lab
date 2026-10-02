@@ -2,6 +2,7 @@
 <html lang="en" data-boot="loading">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0A0A0B">
@@ -209,7 +210,7 @@ npm run diagnose -- --output snapshot.json</code></pre>
             <tr><td data-label="Claim">It fails closed.</td><td data-label="How to check it"><a href="#fool">Try to fool the checker</a>, above.</td></tr>
           </tbody>
         </table>
-        <p class="small">Version 1.2.0, released 1 Oct 2026.</p>
+        <p class="small">Version 1.2.1, released 2 Oct 2026.</p>
       </div>
     </div>
   </section>
@@ -232,7 +233,7 @@ npm run diagnose -- --output snapshot.json</code></pre>
       <li class="dir"><span class="dir-label">Other lab</span><span class="dir-leader" aria-hidden="true"></span><a class="dir-value" href="https://kaagemusha.github.io/governed-action-lab/">Governed Action Lab</a></li>
       <li class="dir"><span class="dir-label">Source</span><span class="dir-leader" aria-hidden="true"></span><a class="dir-value" href="https://github.com/Kaagemusha/context-layer-lab">github.com/Kaagemusha/context-layer-lab</a></li>
       <li class="dir"><span class="dir-label">Eval report</span><span class="dir-leader" aria-hidden="true"></span><a class="dir-value" href="https://github.com/Kaagemusha/context-layer-lab/blob/main/docs/eval-report.md">17 of 17 pass</a></li>
-      <li class="dir"><span class="dir-label">Version</span><span class="dir-leader" aria-hidden="true"></span><a class="dir-value" href="https://github.com/Kaagemusha/context-layer-lab/blob/main/CHANGELOG.md">1.2.0, released 1 Oct 2026</a></li>
+      <li class="dir"><span class="dir-label">Version</span><span class="dir-leader" aria-hidden="true"></span><a class="dir-value" href="https://github.com/Kaagemusha/context-layer-lab/blob/main/CHANGELOG.md">1.2.1, released 2 Oct 2026</a></li>
       <li class="dir"><span class="dir-label">Contact</span><span class="dir-leader" aria-hidden="true"></span><a class="dir-value" href="https://antoine.nutu.net/#contact">antoine.nutu.net</a></li>
     </ul>
     <div class="colophon">
@@ -252,14 +253,7 @@ npm run diagnose -- --output snapshot.json</code></pre>
 </dialog>
 
 <p id="announcer" class="vh" role="status" aria-live="polite"></p>
-<script>
-  setTimeout(function () {
-    if (document.documentElement.dataset.boot === "loading") {
-      var s = document.getElementById("boot-status");
-      if (s) s.textContent = "Still loading. Reload the page if nothing changes.";
-    }
-  }, 6000);
-</script>
+<script src="./boot.js"></script>
 <script type="module" src="./app.js?v=2"></script>
 </body>
 </html>

@@ -15,10 +15,11 @@ no install, loads a synthetic snapshot, fully interactive.
 ## The failure it prevents
 
 ```text
-07:30  status dashboard: GREEN
+07:30  status dashboard: GREEN (valid until 07:55)
 08:02  nightly export: SUCCESS
 08:40  docs build: FAILED
-09:05  weekly report: PRESERVED_LOCAL
+09:05  weekly report: finished, output not published
+17:30  data sync: due later today, not counted as failed
 
 Naive answer:     Yes, the dashboard is green.
 Governed answer:  No, two lanes need attention.
