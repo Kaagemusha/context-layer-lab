@@ -134,6 +134,13 @@ full list.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): development checks and how to add an
   eval case.
 
+## How it was built
+
+Built with AI coding agents, Claude Code among them, under my direction. I
+set the design and approve every release; the agents wrote and cross-reviewed
+much of the code. Every change passes CI and review before release, and commits
+credit the agent that contributed.
+
 ## License
 
 MIT
